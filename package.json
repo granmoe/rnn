@@ -1,0 +1,46 @@
+{
+  "name": "rnn",
+  "version": "0.0.2",
+  "description": "A modernized version of Andrej Karpathy's recurrent-js",
+  "main": "dist/index.js",
+  "scripts": {
+    "compile": "babel src -d dist",
+    "prepublishOnly": "npm run compile"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all",
+    "semi": false
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.2",
+    "eslint": "^4.19.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.7.0",
+    "eslint-plugin-standard": "^3.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/granmoe/rnn.git"
+  },
+  "keywords": [
+    "rnn",
+    "recurrent",
+    "ai",
+    "ml",
+    "machine learning",
+    "deep learning",
+    "neural network",
+    "artifical intelligence"
+  ],
+  "author": "Matt Granmoe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/granmoe/rnn/issues"
+  },
+  "homepage": "https://github.com/granmoe/rnn#readme"
+}
