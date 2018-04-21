@@ -4,7 +4,7 @@
   "description": "A modernized version of Andrej Karpathy's recurrent-js",
   "main": "dist/index.js",
   "scripts": {
-    "compile": "babel src -d dist",
+    "compile": "babel src -d dist --presets=babel-preset-env",
     "prepublishOnly": "npm run compile"
   },
   "prettier": {
@@ -13,8 +13,9 @@
     "semi": false
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
+    "babel-cli": "^7.0.0-beta.3",
     "babel-eslint": "^8.2.2",
+    "babel-preset-env": "7.0.0-beta.3",
     "eslint": "^4.19.0",
     "eslint-config-prettier": "^2.9.0",
     "eslint-config-standard": "^11.0.0",
@@ -42,5 +43,6 @@
   "bugs": {
     "url": "https://github.com/granmoe/rnn/issues"
   },
-  "homepage": "https://github.com/granmoe/rnn#readme"
+  "homepage": "https://github.com/granmoe/rnn#readme",
+  "dependencies": {}
 }

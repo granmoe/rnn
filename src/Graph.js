@@ -20,17 +20,17 @@ export default class Graph {
 
   rowPluck(m, ix) {
     function backward() {
-      for (let i = 0, n = d; i < n; i++) {
-        m.dw[d * ix + i] += out.dw[i]
+      for (let i = 0; i < cols; i++) {
+        m.dw[cols * ix + i] += out.dw[i]
       }
     }
 
-    assert(ix >= 0 && ix < m.n)
+    assert(ix >= 0 && ix < m.rows)
 
     // pluck a row of m with index ix and return it as col vector
-    let d = m.d
-    let out = new Mat(d, 1)
-    out.updateW((w, i) => m.w[d * ix + i])
+    let cols = m.cols
+    let out = new Mat(cols, 1)
+    out.updateW((w, i) => m.w[cols * ix + i])
 
     if (this.needsBackprop) {
       this.backprop.push(backward)
@@ -78,36 +78,36 @@ export default class Graph {
   // TODO NEXT: refactor this
   mul(m1, m2) {
     function backward() {
-      for (let i = 0; i < m1.n; i++) {
+      for (let i = 0; i < m1.rows; i++) {
         // loop over rows of m1
-        for (let j = 0; j < m2.d; j++) {
+        for (let j = 0; j < m2.cols; j++) {
           // loop over cols of m2
-          for (let k = 0; k < m1.d; k++) {
+          for (let k = 0; k < m1.cols; k++) {
             // dot product loop
-            let b = out.dw[d * i + j]
-            m1.dw[m1.d * i + k] += m2.w[m2.d * k + j] * b
-            m2.dw[m2.d * k + j] += m1.w[m1.d * i + k] * b
+            let b = out.dw[cols * i + j]
+            m1.dw[m1.cols * i + k] += m2.w[m2.cols * k + j] * b
+            m2.dw[m2.cols * k + j] += m1.w[m1.cols * i + k] * b
           }
         }
       }
     }
 
     // multiply matrices m1 * m2
-    assert(m1.d === m2.n, 'matmul dimensions misaligned')
+    assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
-    let n = m1.n
-    let d = m2.d
-    let out = new Mat(n, d)
-    for (let i = 0; i < m1.n; i++) {
+    let rows = m1.rows
+    let cols = m2.cols
+    let out = new Mat(rows, cols)
+    for (let i = 0; i < m1.rows; i++) {
       // loop over rows of m1
-      for (let j = 0; j < m2.d; j++) {
+      for (let j = 0; j < m2.cols; j++) {
         // loop over cols of m2
         let dot = 0.0
-        for (let k = 0; k < m1.d; k++) {
+        for (let k = 0; k < m1.cols; k++) {
           // dot product loop
-          dot += m1.w[m1.d * i + k] * m2.w[m2.d * k + j]
+          dot += m1.w[m1.cols * i + k] * m2.w[m2.cols * k + j]
         }
-        out.w[d * i + j] = dot
+        out.w[cols * i + j] = dot
       }
     }
 

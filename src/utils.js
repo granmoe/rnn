@@ -66,7 +66,7 @@ export function samplei(w) {
 }
 
 export function softmax(m) {
-  let out = new Mat(m.n, m.d) // probability volume
+  let out = new Mat(m.rows, m.cols) // probability volume
 
   let maxval = -999999
   m.w.forEach(w => {
@@ -74,7 +74,7 @@ export function softmax(m) {
   })
 
   let s = 0.0
-  for (let i = 0, n = m.w.length; i < n; i++) {
+  for (let i = 0; i < m.w.length; i++) {
     out.w[i] = Math.exp(m.w[i] - maxval)
     s += out.w[i]
   }

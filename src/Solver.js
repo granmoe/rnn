@@ -16,10 +16,10 @@ export default class Solver {
       if (model.hasOwnProperty(k)) {
         let m = model[k] // mat ref
         if (!(k in this.step_cache)) {
-          this.step_cache[k] = new Mat(m.n, m.d)
+          this.step_cache[k] = new Mat(m.rows, m.cols)
         }
         let s = this.step_cache[k]
-        for (let i = 0, n = m.w.length; i < n; i++) {
+        for (let i = 0; i < m.w.length; i++) {
           // rmsprop adaptive learning rate
           let mdwi = m.dw[i]
           s.w[i] =
