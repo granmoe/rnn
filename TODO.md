@@ -3,9 +3,14 @@
 ## Restructure
 
 * review each module
-  * Mat API:
+  * Graph
+  * Mat
     * Method for updating weights can either take new weights array or a map function?
     * Constructor can optionally take weights?
+  * RNN
+    * Create an API so that code in recurrent pages/index can be generalized and moved into here
+  * Solver
+  * utils
 * Make recurrent/ an npm module, import here
 * Move some of the simple util funcs into a separate utils file
 * Maybe move each class into its own file

@@ -1,5 +1,6 @@
 import { assert, randf } from './utils'
 
+// TODO: Change rows/cols to rowCount, colCount or numRows, numCols
 export default class Mat {
   constructor(rows, cols) {
     this.rows = rows
