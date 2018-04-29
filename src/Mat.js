@@ -11,6 +11,17 @@ export default class Mat {
     return this
   }
 
+  indexToCoord(i) {
+    return {
+      row: Math.ceil((i + 1) / this.cols) - 1,
+      col: ((i + 1) % this.cols || this.cols) - 1,
+    }
+  }
+
+  coordToIndex(row, col) {
+    return this.cols * row + col
+  }
+
   get(row, col) {
     // we want row-major order
     let ix = this.cols * row + col
@@ -25,7 +36,9 @@ export default class Mat {
   }
 
   updateW(func) {
-    this.w = this.w.map(func)
+    this.w.forEach((w, i) => {
+      this.w[i] = func(w, i, this)
+    })
     return this
   }
 
@@ -34,17 +47,11 @@ export default class Mat {
     return this
   }
 
-  clone({ withDw = false } = {}) {
-    const copy = new Mat(this.rows, this.cols) // maybe just allow Mat constructor to take optional weights?
+  clone() {
+    // does not copy dw
+    const copy = new Mat(this.rows, this.cols)
     copy.w = new Float64Array(this.w)
-    if (withDw) {
-      copy.dw = new Float64Array(this.dw)
-    }
     return copy
-  }
-
-  fillRand(lo, hi) {
-    return this.updateW(_ => randf(lo, hi))
   }
 
   toJSON() {
@@ -65,8 +72,7 @@ export default class Mat {
 }
 
 // return Mat but filled with random numbers from gaussian
-export function RandMat(rows, cols, std) {
-  return new Mat(rows, cols).fillRand(-std, std) // kind of :P
-}
+export const RandMat = (rows, cols, std) =>
+  new Mat(rows, cols).updateW(_ => randf(-std, std)) // kind of :P
 
 const zeros = count => new Float64Array(count)
