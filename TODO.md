@@ -30,3 +30,5 @@
 
 // maybe "rowPluck" could be a method on Mat, then can just do
 // out = new Mat({ weights: m.rowPluck(index) }) or something
+
+Use same tags as this https://github.com/mvrahden/recurrent-js
