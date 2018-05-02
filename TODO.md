@@ -7,16 +7,13 @@
   * review usages of rnn from recurrent after doing this
 * review each module
   * Graph
+    * Maybe use generator / call stack type data structure here?
+    * Review that other guy's lib
   * RNN
     * Create an API so that code in recurrent pages/index can be generalized and moved into here
   * Solver
   * utils
-* Make recurrent/ an npm module, import here
-* Move some of the simple util funcs into a separate utils file
-* Maybe move each class into its own file
-* pages/index: better data structure...hyper params, input etc need a home
-* functions instead of classes
-  * generators
+* functions (or generators?) and object factories instead of classes
 * optimize...maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
 
 ## Tests

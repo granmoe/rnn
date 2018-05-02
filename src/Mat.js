@@ -48,7 +48,7 @@ export default class Mat {
   }
 
   clone() {
-    // does not copy dw
+    // does not copy over dw
     const copy = new Mat(this.rows, this.cols)
     copy.w = new Float64Array(this.w)
     return copy
