@@ -11,7 +11,6 @@ export default class Graph {
     // this will store a list of functions that perform backprop,
     // in their forward pass order. So in backprop we will go
     // backwards through this array and invoke each one
-    // rename to backpropFuncs
     this.backpropFuncs = []
   }
 
@@ -78,33 +77,11 @@ export default class Graph {
     return out
   }
 
-  // TODO NEXT: refactor this using updateMats
   mul(m1, m2) {
-    function backward() {
-      for (let i = 0; i < m1.rows; i++) {
-        // loop over rows of m1
-        for (let j = 0; j < m2.cols; j++) {
-          // loop over cols of m2
-          for (let k = 0; k < m1.cols; k++) {
-            // dot product loop
-            let b = out.dw[m2.cols * i + j]
-            const m2i = m2.cols * k + j
-            const m1i = m1.cols * i + k
-            // const { row: m1r, col: m1col } = m1.indexToCoord(m1i)
-            // const { row: m2r, col: m2col } = m1.indexToCoord(m2i)
-            // const x = m1r + m1col + m2r + m2col
-
-            m1.dw[m1i] += m2.w[m2i] * b
-            m2.dw[m2i] += m1.w[m1i] * b
-          }
-        }
-      }
-    }
-
     assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
-    // multiply matrices m1 * m2
-    let out = new Mat(m1.rows, m2.cols).updateW((_, i, mat) => {
+    // out = dot product of m1 and m2
+    const out = new Mat(m1.rows, m2.cols).updateW((_, i, mat) => {
       const { row, col } = mat.indexToCoord(i)
 
       let dot = 0
@@ -116,7 +93,19 @@ export default class Graph {
     })
 
     if (this.needsBackprop) {
-      this.backpropFuncs.push(backward)
+      this.backpropFuncs.push(() => {
+        out.dw.map((b, i) => {
+          const { row, col } = out.indexToCoord(i)
+
+          for (let n = 0; n < m1.cols; n++) {
+            const m1i = n + row * m1.cols
+            const m2i = n * m2.cols + col
+
+            m1.dw[m1i] += m2.w[m2i] * b
+            m2.dw[m2i] += m1.w[m1i] * b
+          }
+        })
+      })
     }
 
     return out
