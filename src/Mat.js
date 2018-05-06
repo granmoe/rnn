@@ -19,6 +19,7 @@ export default class Mat {
   }
 
   coordToIndex(row, col) {
+    // is this used anywhere? should give a once over and delete dead code everywhere
     return this.cols * row + col
   }
 

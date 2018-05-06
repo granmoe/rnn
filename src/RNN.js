@@ -1,5 +1,9 @@
 import Mat, { RandMat } from './Mat'
 
+// Prob start analysis of this module with RNN since it's simpler
+// split RNN and LSTM into separate files?
+// create Model class that ties everything together (and generalizes the stuff in recurrent/pages/index)
+
 export function initLSTM(inputSize, hiddenSizes, outputSize) {
   return hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
@@ -29,9 +33,8 @@ export function initLSTM(inputSize, hiddenSizes, outputSize) {
 }
 
 // TODO: further refactoring here and make sure to understand everything
-export function forwardLSTM(G, model, hiddenSizes, x, prev) {
+export function forwardLSTM(graph, model, hiddenSizes, x, prev) {
   // forward prop for a single tick of LSTM
-  // G is graph to append ops to
   // model contains LSTM parameters
   // x is 1D column vector with observation
   // prev is a struct containing hidden and cell
@@ -53,32 +56,40 @@ export function forwardLSTM(G, model, hiddenSizes, x, prev) {
       let cellPrev = cellPrevs[index]
 
       // input gate
-      let h0 = G.mul(model['Wix' + index], inputVector)
-      let h1 = G.mul(model['Wih' + index], hiddenPrev)
-      let inputGate = G.sigmoid(G.add(G.add(h0, h1), model['bi' + index]))
+      let h0 = graph.mul(model['Wix' + index], inputVector)
+      let h1 = graph.mul(model['Wih' + index], hiddenPrev)
+      let inputGate = graph.sigmoid(
+        graph.add(graph.add(h0, h1), model['bi' + index]),
+      )
 
       // forget gate
-      let h2 = G.mul(model['Wfx' + index], inputVector)
-      let h3 = G.mul(model['Wfh' + index], hiddenPrev)
-      let forgetGate = G.sigmoid(G.add(G.add(h2, h3), model['bf' + index]))
+      let h2 = graph.mul(model['Wfx' + index], inputVector)
+      let h3 = graph.mul(model['Wfh' + index], hiddenPrev)
+      let forgetGate = graph.sigmoid(
+        graph.add(graph.add(h2, h3), model['bf' + index]),
+      )
 
       // output gate
-      let h4 = G.mul(model['Wox' + index], inputVector)
-      let h5 = G.mul(model['Woh' + index], hiddenPrev)
-      let outputGate = G.sigmoid(G.add(G.add(h4, h5), model['bo' + index]))
+      let h4 = graph.mul(model['Wox' + index], inputVector)
+      let h5 = graph.mul(model['Woh' + index], hiddenPrev)
+      let outputGate = graph.sigmoid(
+        graph.add(graph.add(h4, h5), model['bo' + index]),
+      )
 
       // write operation on cells
-      let h6 = G.mul(model['Wcx' + index], inputVector)
-      let h7 = G.mul(model['Wch' + index], hiddenPrev)
-      let cellWrite = G.tanh(G.add(G.add(h6, h7), model['bc' + index]))
+      let h6 = graph.mul(model['Wcx' + index], inputVector)
+      let h7 = graph.mul(model['Wch' + index], hiddenPrev)
+      let cellWrite = graph.tanh(
+        graph.add(graph.add(h6, h7), model['bc' + index]),
+      )
 
       // compute new cell activation
-      let retainCell = G.eltmul(forgetGate, cellPrev) // what do we keep from cell
-      let writeCell = G.eltmul(inputGate, cellWrite) // what do we write to cell
-      let cellD = G.add(retainCell, writeCell) // new cell contents
+      let retainCell = graph.eltmul(forgetGate, cellPrev) // what do we keep from cell
+      let writeCell = graph.eltmul(inputGate, cellWrite) // what do we write to cell
+      let cellD = graph.add(retainCell, writeCell) // new cell contents
 
       // compute hidden state as gated, saturated cell activations
-      let hiddenD = G.eltmul(outputGate, G.tanh(cellD))
+      let hiddenD = graph.eltmul(outputGate, graph.tanh(cellD))
 
       result.hidden.push(hiddenD)
       result.cell.push(cellD)
@@ -89,8 +100,8 @@ export function forwardLSTM(G, model, hiddenSizes, x, prev) {
   )
 
   // one decoder to outputs at end
-  let output = G.add(
-    G.mul(model['Whd'], hidden[hidden.length - 1]),
+  let output = graph.add(
+    graph.mul(model['Whd'], hidden[hidden.length - 1]),
     model['bd'],
   )
 
@@ -118,12 +129,13 @@ export function initRNN(inputSize, hiddenSizes, outputSize) {
   return model
 }
 
-export function forwardRNN(G, model, hiddenSizes, x, prev) {
+export function forwardRNN(graph, model, hiddenSizes, x, prev) {
   // forward prop for a single tick of RNN
-  // G is graph to append ops to
   // model contains RNN parameters
   // x is 1D column vector with observation
   // prev is a struct containing hidden activations from last step
+
+  // TODO: prev.h is the only thing used from prev...just pass in prev.h directly and use default value
 
   let hiddenPrevs
   if (typeof prev.h === 'undefined') {
@@ -136,14 +148,14 @@ export function forwardRNN(G, model, hiddenSizes, x, prev) {
     let inputVector = index === 0 ? x : result[index - 1]
     let hiddenPrev = hiddenPrevs[index]
 
-    let h0 = G.mul(model['Wxh' + index], inputVector)
-    let h1 = G.mul(model['Whh' + index], hiddenPrev)
+    let h0 = graph.mul(model['Wxh' + index], inputVector)
+    let h1 = graph.mul(model['Whh' + index], hiddenPrev)
 
-    return G.relu(G.add(G.add(h0, h1), model['bhh' + index]))
+    return graph.relu(graph.add(graph.add(h0, h1), model['bhh' + index]))
   }, [])
 
   // one decoder to outputs at end
-  const o = G.add(G.mul(model['Whd'], h[h.length - 1]), model['bd'])
+  const o = graph.add(graph.mul(model['Whd'], h[h.length - 1]), model['bd'])
 
   // return cell memory, hidden representation and output
   return { h, o }

@@ -2,19 +2,23 @@
 
 ## Restructure
 
-* Create a "Model" class and hang everything that gets set in initVocab on it, as well as obvious stuff
-  * Maybe model can also have solver and graph etc so that model gives you the full API and you don't have to piece things together
-  * review usages of rnn from recurrent after doing this
+* [IN PROGRESS] Create a Model module and just throw all the remaining stray code from recurrent.js in there and get it working, then begin restructuring and improving it
+* Need deeper understanding of how modules interact in order to further restructure and improve the code
+  * Draw all the connections or something
 * review each module
   * Graph
-    * Maybe use generator / call stack type data structure here?
-    * Review that other guy's lib
+    * Consider moving some of this code to other modules
   * RNN
     * Create an API so that code in recurrent pages/index can be generalized and moved into here
   * Solver
   * utils
+* After getting a solid understanding of the whole project, create a "Model" class and hang everything that gets set in initVocab on it, as well as obvious stuff
+  * Maybe model can also have solver and graph etc so that model gives you the full API and you don't have to piece things together
+  * review usages of rnn from recurrent after doing this
 * functions (or generators?) and object factories instead of classes
 * optimize...maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
+* Ideas:
+  * Maybe use generator / call stack type data structure for Graph
 
 ## Tests
 
