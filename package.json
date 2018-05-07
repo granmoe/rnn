@@ -4,7 +4,7 @@
   "description": "A modernized version of Andrej Karpathy's recurrent-js",
   "main": "dist/index.js",
   "scripts": {
-    "compile": "babel src -d dist --presets=babel-preset-env",
+    "compile": "babel src -d dist",
     "prepublishOnly": "npm run compile"
   },
   "prettier": {
@@ -13,9 +13,10 @@
     "semi": false
   },
   "devDependencies": {
-    "babel-cli": "^7.0.0-beta.3",
+    "@babel/cli": "7.0.0-beta.46",
+    "@babel/core": "7.0.0-beta.46",
+    "@babel/preset-env": "^7.0.0-beta.46",
     "babel-eslint": "^8.2.2",
-    "babel-preset-env": "7.0.0-beta.3",
     "eslint": "^4.19.0",
     "eslint-config-prettier": "^2.9.0",
     "eslint-config-standard": "^11.0.0",
