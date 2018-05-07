@@ -13,5 +13,9 @@
     "es6": true,
     "node": true,
     "browser": true
+  },
+  "globals": {
+    "expect": false,
+    "test": false
   }
 }

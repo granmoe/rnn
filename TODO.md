@@ -2,7 +2,7 @@
 
 ## Restructure
 
-* [IN PROGRESS] Create a Model module and just throw all the remaining stray code from recurrent.js in there and get it working, then begin restructuring and improving it
+* [IN PROGRESS] Begin restructuring and improving Model
 * Tests: Run until the word "the" appears, assert that number of iterations is below a certain threshold
   * Maybe same for "to"
 * Need deeper understanding of how modules interact in order to further restructure and improve the code
