@@ -1,16 +1,7 @@
 import Solver from './Solver'
 import Graph from './Graph'
-import RandMat from './Mat'
 import { randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
-
-let pplList = []
-let tickIter = 0
-
-// model parameters
-const generator = 'lstm' // can be 'rnn' or 'lstm'
-const hiddenSizes = [20, 20] // list of sizes of hidden layers
-const letterSize = 5 // size of letter embeddings
 
 // optimization
 const regc = 0.000001 // L2 regularization strength
@@ -21,23 +12,14 @@ let sampleSoftmaxTemperature = 1.0 // how peaky model predictions should be
 let maxCharsGen = 100 // max length of generated sentences
 
 // various global var inits
-// let epochSize = -1
-let inputSize = -1
-let outputSize = -1
-let letterToIndex = {}
-let indexToLetter = {}
-let vocab = []
-let dataSents = []
 let solver = new Solver() // should be class because it needs memory for step caches
 // let pplGraph = new Rvis()
 
 let lh, logprobs, probs
 
-let model = {}
-
-function initVocab(sents, countThreshold) {
+function initVocab(sentences, charCountThreshold = 1) {
   // go over all characters and keep track of all unique ones seen
-  const charCounts = Array.from(sents.join('')).reduce((counts, char) => {
+  const charCounts = [...sentences.join('')].reduce((counts, char) => {
     counts[char] = counts[char] ? counts[char] + 1 : (counts[char] = 1)
     return counts
   }, {})
@@ -45,84 +27,70 @@ function initVocab(sents, countThreshold) {
   // NOTE: start at nextIndex at 1 because we will have START and END tokens!
   // that is, START token will be index 0 in model letter vectors
   // and END token will be index 0 in the next character softmax
-  const { letterToIndex: l, indexToLetter: i, vocab: v } = Object.entries(
-    charCounts,
-  ).reduce(
-    (result, [char, count]) => {
-      if (count >= countThreshold) {
-        result.vocab.push(char)
-        result.letterToIndex[char] = result.nextIndex
-        result.indexToLetter[result.nextIndex] = char
-        result.nextIndex += 1
-      }
-      return result
-    },
-    {
-      letterToIndex: {},
-      indexToLetter: {},
-      vocab: [],
-      nextIndex: 1,
-    },
-  )
+  const initialVocabData = {
+    letterToIndex: {},
+    indexToLetter: {},
+    vocab: [],
+    nextIndex: 1,
+    inputSize: 1,
+  }
 
-  letterToIndex = l
-  indexToLetter = i
-  vocab = v
+  return Object.entries(charCounts).reduce((result, [char, count]) => {
+    if (count >= charCountThreshold) {
+      result.vocab.push(char)
+      result.letterToIndex[char] = result.nextIndex
+      result.indexToLetter[result.nextIndex] = char
+      result.nextIndex += 1
+      result.inputSize += 1
+    }
 
-  // globals written: indexToLetter, letterToIndex, vocab (list), and:
-  inputSize = vocab.length + 1
-  outputSize = vocab.length + 1
-  // epochSize = sents.length
+    return result
+  }, initialVocabData)
+  // epochSize = sentences.length
   // TODO: Show this in the UI
   // $('#prepro_status').text(
   // 'found ' + vocab.length + ' distinct characters: ' + vocab.join(''),
   // )
 }
 
-function initModel() {
-  // letter embedding vectors
-  let model = {}
-  model['Wil'] = new RandMat(inputSize, letterSize, 0, 0.08)
+// TODO: This is all a mess, obviously. It's just in an awkward stage of refactoring.
+export function createModel(hyperParams) {
+  const { type, hiddenSizes, letterSize, input } = hyperParams
+  const sentences = input.split('\n').map(str => str.trim())
+  const { letterToIndex, indexToLetter, vocab, inputSize } = initVocab(
+    sentences,
+    hyperParams.charCountThreshold,
+  )
 
-  if (generator === 'rnn') {
-    let rnn = initRNN(letterSize, hiddenSizes, outputSize)
-    model = {
-      ...model,
+  if (type === 'rnn') {
+    let rnn = initRNN(letterSize, hiddenSizes, inputSize)
+    return {
       ...rnn,
+      hyperParams,
+      sentences,
+      letterToIndex,
+      indexToLetter,
+      vocab,
     }
   } else {
-    let lstm = initLSTM(letterSize, hiddenSizes, outputSize)
-    model = {
-      ...model,
+    let lstm = initLSTM(letterSize, hiddenSizes, inputSize)
+    return {
       ...lstm,
+      hyperParams,
+      sentences,
+      letterToIndex,
+      indexToLetter,
+      vocab,
     }
   }
-
-  return model
-}
-
-export function reinit(inputSentences) {
-  // note: reinit writes global vars by running
-  // eval on a textarea
-  // TODO: Allow user to set hyperparams in a safer way, via inputs
-
-  solver = new Solver() // GLOBAL
-  // pplGraph = new Rvis() // GLOBAL
-
-  pplList = [] // GLOBAL
-  tickIter = 0 // GLOBAL
-
-  dataSents = inputSentences.split('\n').map(str => str.trim())
-  initVocab(dataSents, 1) // takes count threshold for characters
-  model = initModel() // pass in some of the stuff that will be returned from initVocab
 }
 
 function forwardIndex(G, model, ix, prev) {
   const x = G.rowPluck(model['Wil'], ix)
   // forward prop the sequence learner
-  return generator === 'rnn'
-    ? forwardRNN(G, model, hiddenSizes, x, prev)
-    : forwardLSTM(G, model, hiddenSizes, x, prev)
+  return model.hyperParams.type === 'rnn'
+    ? forwardRNN(G, model, x, prev)
+    : forwardLSTM(G, model, x, prev)
 }
 
 function predictSentence(model, sample = false, temperature = 1.0) {
@@ -131,7 +99,7 @@ function predictSentence(model, sample = false, temperature = 1.0) {
   let prev = {}
   while (true) {
     // RNN tick
-    let ix = s.length === 0 ? 0 : letterToIndex[s[s.length - 1]]
+    let ix = s.length === 0 ? 0 : model.letterToIndex[s[s.length - 1]]
     lh = forwardIndex(G, model, ix, prev)
     prev = lh
 
@@ -159,7 +127,7 @@ function predictSentence(model, sample = false, temperature = 1.0) {
       break
     } // something is wrong
 
-    let letter = indexToLetter[ix]
+    let letter = model.indexToLetter[ix]
     s += letter
   }
   return s
@@ -176,8 +144,8 @@ function costfun(model, sent) {
   let prev = {}
   for (let i = -1; i < n; i++) {
     // start and end tokens are zeros
-    let ixSource = i === -1 ? 0 : letterToIndex[sent[i]] // first step: start with START token
-    let ixTarget = i === n - 1 ? 0 : letterToIndex[sent[i + 1]] // last step: end with END token
+    let ixSource = i === -1 ? 0 : model.letterToIndex[sent[i]] // first step: start with START token
+    let ixTarget = i === n - 1 ? 0 : model.letterToIndex[sent[i + 1]] // last step: end with END token
 
     lh = forwardIndex(G, model, ixSource, prev)
     prev = lh
@@ -197,16 +165,12 @@ function costfun(model, sent) {
   return { G, ppl, cost }
 }
 
-// let startTime
-export function tick() {
-  // if (!startTime) startTime = new Date().getTime()
-
-  // sample sentence fromd data
-  let sentix = randi(0, dataSents.length)
-  let sent = dataSents[sentix]
-
+let tickIter = 0
+export function train(model) {
+  // sample sentence from data
+  const sentence = model.sentences[randi(0, model.sentences.length)]
   // evaluate cost function on a sentence
-  let costStruct = costfun(model, sent)
+  let costStruct = costfun(model, sentence)
 
   // use built up graph to compute backprop (set .dw fields in mats)
   costStruct.G.runBackprop()
@@ -215,15 +179,9 @@ export function tick() {
   // let solverStats = solver.step(model, learningRate, regc, clipval)
   // $("#gradclip").text('grad clipped ratio: ' + solverStats.ratio_clipped)
 
-  pplList.push(costStruct.ppl) // keep track of perplexity
+  // pplList.push(costStruct.ppl) // keep track of perplexity
 
-  // evaluate now and then
   tickIter += 1
-
-  // if (tickIter % 500 === 0) {
-  // console.log('TIME ELAPSED PER 500 ITERATIONS: ', new Date().getTime() - startTime)
-  // startTime = null
-  // }
 
   if (tickIter % 50 === 0) {
     // draw samples
@@ -272,6 +230,3 @@ export function tick() {
     // }
   }
 }
-
-// This was commented out in his code...perhaps an unfinished idea?
-// $('#gradcheck').click(gradCheck);

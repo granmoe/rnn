@@ -28,12 +28,15 @@ export function initLSTM(inputSize, hiddenSizes, outputSize) {
     model['Whd'] = new RandMat(outputSize, hiddenSize, 0.08)
     model['bd'] = new Mat(outputSize, 1)
 
+    // letter embedding vectors
+    model['Wil'] = new RandMat(outputSize, inputSize, 0, 0.08)
+
     return model
   }, {})
 }
 
 // TODO: further refactoring here and make sure to understand everything
-export function forwardLSTM(graph, model, hiddenSizes, x, prev) {
+export function forwardLSTM(graph, model, x, prev) {
   // forward prop for a single tick of LSTM
   // model contains LSTM parameters
   // x is 1D column vector with observation
@@ -42,14 +45,16 @@ export function forwardLSTM(graph, model, hiddenSizes, x, prev) {
 
   let hiddenPrevs, cellPrevs
   if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
+    hiddenPrevs = model.hyperParams.hiddenSizes.map(
+      hiddenSize => new Mat(hiddenSize, 1),
+    )
     cellPrevs = [...hiddenPrevs]
   } else {
     hiddenPrevs = prev.h
     cellPrevs = prev.c
   }
 
-  const { hidden, cell } = hiddenSizes.reduce(
+  const { hidden, cell } = model.hyperParams.hiddenSizes.reduce(
     (result, hiddenSize, index, hiddenSizes) => {
       let inputVector = index === 0 ? x : result.hidden[index - 1]
       let hiddenPrev = hiddenPrevs[index]
@@ -126,10 +131,13 @@ export function initRNN(inputSize, hiddenSizes, outputSize) {
   )
   model['bd'] = new Mat(outputSize, 1)
 
+  // letter embedding vectors
+  model['Wil'] = new RandMat(outputSize, inputSize, 0, 0.08)
+
   return model
 }
 
-export function forwardRNN(graph, model, hiddenSizes, x, prev) {
+export function forwardRNN(graph, model, x, prev) {
   // forward prop for a single tick of RNN
   // model contains RNN parameters
   // x is 1D column vector with observation
@@ -139,20 +147,25 @@ export function forwardRNN(graph, model, hiddenSizes, x, prev) {
 
   let hiddenPrevs
   if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
+    hiddenPrevs = model.hyperParams.hiddenSizes.map(
+      hiddenSize => new Mat(hiddenSize, 1),
+    )
   } else {
     hiddenPrevs = prev.h
   }
 
-  const h = hiddenSizes.reduce((result, hiddenSize, index) => {
-    let inputVector = index === 0 ? x : result[index - 1]
-    let hiddenPrev = hiddenPrevs[index]
+  const h = model.hyperParams.hiddenSizes.reduce(
+    (result, hiddenSize, index) => {
+      let inputVector = index === 0 ? x : result[index - 1]
+      let hiddenPrev = hiddenPrevs[index]
 
-    let h0 = graph.mul(model['Wxh' + index], inputVector)
-    let h1 = graph.mul(model['Whh' + index], hiddenPrev)
+      let h0 = graph.mul(model['Wxh' + index], inputVector)
+      let h1 = graph.mul(model['Whh' + index], hiddenPrev)
 
-    return graph.relu(graph.add(graph.add(h0, h1), model['bhh' + index]))
-  }, [])
+      return graph.relu(graph.add(graph.add(h0, h1), model['bhh' + index]))
+    },
+    [],
+  )
 
   // one decoder to outputs at end
   const o = graph.add(graph.mul(model['Whd'], h[h.length - 1]), model['bd'])

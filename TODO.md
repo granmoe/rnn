@@ -3,8 +3,10 @@
 ## Restructure
 
 * [IN PROGRESS] Begin restructuring and improving Model
-* Tests: Run until the word "the" appears, assert that number of iterations is below a certain threshold
+  * Need a way to give output to caller (prob callback)
+* [IN PROGRESS] Tests: Run until the word "the" appears, assert that number of iterations is below a certain threshold
   * Maybe same for "to"
+  * snapshot testing
 * Need deeper understanding of how modules interact in order to further restructure and improve the code
   * Draw all the connections or something
 * review each module

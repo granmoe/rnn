@@ -15,6 +15,8 @@ export default class Solver {
     let numTot = 0
 
     for (const [k, m] of Object.entries(model)) {
+      if (!(m instanceof Mat)) return
+
       if (!(k in this.stepCache)) {
         this.stepCache[k] = new Mat(m.rows, m.cols)
       }
@@ -24,8 +26,7 @@ export default class Solver {
       for (let i = 0; i < m.w.length; i++) {
         // rmsprop adaptive learning rate
         let mdwi = m.dw[i]
-        s.w[i] =
-          s.w[i] * this.decayRate + (1.0 - this.decayRate) * mdwi * mdwi
+        s.w[i] = s.w[i] * this.decayRate + (1.0 - this.decayRate) * mdwi * mdwi
 
         // gradient clip
         if (mdwi > clipval) {
@@ -40,8 +41,7 @@ export default class Solver {
 
         // update (and regularize)
         m.w[i] +=
-          -stepSize * mdwi / Math.sqrt(s.w[i] + this.smoothEps) -
-          regc * m.w[i]
+          -stepSize * mdwi / Math.sqrt(s.w[i] + this.smoothEps) - regc * m.w[i]
         m.dw[i] = 0 // reset gradients for next iteration
       }
     }
