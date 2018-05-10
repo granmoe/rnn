@@ -11,36 +11,33 @@ const clipval = 5.0 // clip gradients at this value
 let sampleSoftmaxTemperature = 1.0 // how peaky model predictions should be
 let maxCharsGen = 100 // max length of generated sentences
 
-// various global var inits
-let solver = new Solver() // should be class because it needs memory for step caches
 // let pplGraph = new Rvis()
 
 let lh, logprobs, probs
 
-function initVocab(sentences, charCountThreshold = 1) {
+function createTextModel(sentences, charCountThreshold = 1) {
   // go over all characters and keep track of all unique ones seen
   const charCounts = [...sentences.join('')].reduce((counts, char) => {
     counts[char] = counts[char] ? counts[char] + 1 : (counts[char] = 1)
     return counts
   }, {})
 
-  // NOTE: start at nextIndex at 1 because we will have START and END tokens!
-  // that is, START token will be index 0 in model letter vectors
-  // and END token will be index 0 in the next character softmax
+  // Note: inputSize is one greater than charList.length due to START and END tokens
+  // START token will be index 0 in model letter vectors
+  // END token will be index 0 in the next character softmax
   const initialVocabData = {
+    sentences,
     letterToIndex: {},
     indexToLetter: {},
-    vocab: [],
-    nextIndex: 1,
+    charList: [],
     inputSize: 1,
   }
 
   return Object.entries(charCounts).reduce((result, [char, count]) => {
     if (count >= charCountThreshold) {
-      result.vocab.push(char)
-      result.letterToIndex[char] = result.nextIndex
-      result.indexToLetter[result.nextIndex] = char
-      result.nextIndex += 1
+      result.charList.push(char)
+      result.letterToIndex[char] = result.charList.length
+      result.indexToLetter[result.charList.length] = char
       result.inputSize += 1
     }
 
@@ -49,58 +46,55 @@ function initVocab(sentences, charCountThreshold = 1) {
   // epochSize = sentences.length
   // TODO: Show this in the UI
   // $('#prepro_status').text(
-  // 'found ' + vocab.length + ' distinct characters: ' + vocab.join(''),
+  // 'found ' + charList.length + ' distinct characters: ' + charList.join(''),
   // )
 }
 
-// TODO: This is all a mess, obviously. It's just in an awkward stage of refactoring.
 export function createModel(hyperParams) {
-  const { type, hiddenSizes, letterSize, input } = hyperParams
+  const {
+    type,
+    hiddenSizes,
+    letterSize,
+    input,
+    charCountThreshold,
+  } = hyperParams
   const sentences = input.split('\n').map(str => str.trim())
-  const { letterToIndex, indexToLetter, vocab, inputSize } = initVocab(
-    sentences,
-    hyperParams.charCountThreshold,
-  )
+  const textModel = createTextModel(sentences, charCountThreshold)
 
+  let model
   if (type === 'rnn') {
-    let rnn = initRNN(letterSize, hiddenSizes, inputSize)
-    return {
-      ...rnn,
-      hyperParams,
-      sentences,
-      letterToIndex,
-      indexToLetter,
-      vocab,
-    }
+    model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
   } else {
-    let lstm = initLSTM(letterSize, hiddenSizes, inputSize)
-    return {
-      ...lstm,
-      hyperParams,
-      sentences,
-      letterToIndex,
-      indexToLetter,
-      vocab,
-    }
+    model = initLSTM(letterSize, hiddenSizes, textModel.inputSize)
   }
+
+  return makeTrainFunc(model, textModel, hyperParams)
 }
 
-function forwardIndex(G, model, ix, prev) {
+function forwardIndex(G, model, ix, prev, hyperParams) {
+  // TODO: Should just be a method on the model
+  // Then no need for branching based on h params and no need for so much indirection
   const x = G.rowPluck(model['Wil'], ix)
   // forward prop the sequence learner
-  return model.hyperParams.type === 'rnn'
-    ? forwardRNN(G, model, x, prev)
-    : forwardLSTM(G, model, x, prev)
+  return hyperParams.type === 'rnn'
+    ? forwardRNN(G, model, x, prev, hyperParams)
+    : forwardLSTM(G, model, x, prev, hyperParams)
 }
 
-function predictSentence(model, sample = false, temperature = 1.0) {
+function predictSentence(
+  model,
+  textModel,
+  hyperParams,
+  sample = false,
+  temperature = 1.0,
+) {
   let G = new Graph(false)
   let s = ''
   let prev = {}
   while (true) {
     // RNN tick
-    let ix = s.length === 0 ? 0 : model.letterToIndex[s[s.length - 1]]
-    lh = forwardIndex(G, model, ix, prev)
+    let ix = s.length === 0 ? 0 : textModel.letterToIndex[s[s.length - 1]]
+    lh = forwardIndex(G, model, ix, prev, hyperParams)
     prev = lh
 
     // sample predicted letter
@@ -127,27 +121,27 @@ function predictSentence(model, sample = false, temperature = 1.0) {
       break
     } // something is wrong
 
-    let letter = model.indexToLetter[ix]
+    let letter = textModel.indexToLetter[ix]
     s += letter
   }
   return s
 }
 
-function costfun(model, sent) {
+function costFunc(model, textModel, hyperParams, sentence) {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
-  let n = sent.length
+  let n = sentence.length
   let G = new Graph()
   let log2ppl = 0.0
   let cost = 0.0
   let prev = {}
   for (let i = -1; i < n; i++) {
     // start and end tokens are zeros
-    let ixSource = i === -1 ? 0 : model.letterToIndex[sent[i]] // first step: start with START token
-    let ixTarget = i === n - 1 ? 0 : model.letterToIndex[sent[i + 1]] // last step: end with END token
+    let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
+    let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(G, model, ixSource, prev)
+    lh = forwardIndex(G, model, ixSource, prev, hyperParams)
     prev = lh
 
     // set gradients into logprobabilities
@@ -165,68 +159,76 @@ function costfun(model, sent) {
   return { G, ppl, cost }
 }
 
-let tickIter = 0
-export function train(model) {
-  // sample sentence from data
-  const sentence = model.sentences[randi(0, model.sentences.length)]
-  // evaluate cost function on a sentence
-  let costStruct = costfun(model, sentence)
+function makeTrainFunc(model, textModel, hyperParams) {
+  let tickIter = 0
+  let solver = new Solver() // should be class because it needs memory for step caches
 
-  // use built up graph to compute backprop (set .dw fields in mats)
-  costStruct.G.runBackprop()
-  // perform param update
-  solver.step(model, learningRate, regc, clipval)
-  // let solverStats = solver.step(model, learningRate, regc, clipval)
-  // $("#gradclip").text('grad clipped ratio: ' + solverStats.ratio_clipped)
+  return function(callback, iterationsPerSample = 50) {
+    tickIter += 1
+    // sample sentence from data
+    const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
+    // evaluate cost function on a sentence
+    const costStruct = costFunc(model, textModel, hyperParams, sentence)
 
-  // pplList.push(costStruct.ppl) // keep track of perplexity
+    // use built up graph to compute backprop (set .dw fields in mats)
+    costStruct.G.runBackprop()
+    // perform param update
+    solver.step(model, learningRate, regc, clipval)
 
-  tickIter += 1
+    // let solverStats = solver.step(model, learningRate, regc, clipval)
+    // $("#gradclip").text('grad clipped ratio: ' + solverStats.ratio_clipped)
+    // pplList.push(costStruct.ppl) // keep track of perplexity
 
-  if (tickIter % 50 === 0) {
-    // draw samples
-    // $('#samples').html('') // TODO: Show samples in the UI...for now just log them out
-    for (let q = 0; q < 5; q++) {
-      console.log(
-        'NN output - sample:',
-        predictSentence(model, true, sampleSoftmaxTemperature),
+    if (tickIter % iterationsPerSample === 0) {
+      const argMaxPrediction = predictSentence(
+        model,
+        textModel,
+        hyperParams,
+        false,
       )
-      // var pred = predictSentence(model, true, sampleSoftmaxTemperature)
-      // var pred_div = '<div class="apred">' + pred + '</div>'
-      // $('#samples').append(pred_div)
+      let samples = []
+      for (let q = 0; q < 5; q++) {
+        samples.push(
+          predictSentence(
+            model,
+            textModel,
+            hyperParams,
+            true,
+            sampleSoftmaxTemperature,
+          ),
+        )
+      }
+
+      callback({ argMaxPrediction, samples, iterations: tickIter }) // eslint-disable-line
     }
   }
-
-  if (tickIter % 10 === 0) {
-    // draw argmax prediction
-    // TODO: Show this in the UI...for now just log it out
-    console.log('NN output - argmax prediction:', predictSentence(model, false))
-    // $('#argmax').html('')
-    // var pred = predictSentence(model, false)
-    // var pred_div = '<div class="apred">' + pred + '</div>'
-    // $('#argmax').append(pred_div)
-
-    // // keep track of perplexity
-    // $('#epoch').text('epoch: ' + (tickIter / epochSize).toFixed(2))
-    // $('#ppl').text('perplexity: ' + costStruct.ppl.toFixed(2))
-    // $('#ticktime').text(
-    //   'forw/bwd time per example: ' + tickTime.toFixed(1) + 'ms',
-    // )
-
-    // function median(values) {
-    //   values.sort((a, b) => a - b) // OPT: Isn't this the default sort?
-    //   const half = Math.floor(values.length / 2)
-    //   return values.length % 2
-    //     ? values[half]
-    //     : (values[half - 1] + values[half]) / 2.0
-    // }
-
-    // TODO: Different solution for graph...maybe victory or something...or maybe antd has something
-    // if (tickIter % 100 === 0) {
-    // var median_ppl = median(pplList)
-    // pplList = []
-    // pplGraph.add(tickIter, median_ppl)
-    // pplGraph.drawSelf(document.getElementById('pplgraph'))
-    // }
-  }
 }
+
+// if (tickIter % 10 === 0) {
+// draw argmax prediction
+// TODO: Show this in the UI...for now just log it out
+// $('#argmax').html('')
+// var pred = predictSentence(model, false)
+// var pred_div = '<div class="apred">' + pred + '</div>'
+// $('#argmax').append(pred_div)
+// // keep track of perplexity
+// $('#epoch').text('epoch: ' + (tickIter / epochSize).toFixed(2))
+// $('#ppl').text('perplexity: ' + costStruct.ppl.toFixed(2))
+// $('#ticktime').text(
+//   'forw/bwd time per example: ' + tickTime.toFixed(1) + 'ms',
+// )
+// function median(values) {
+//   values.sort((a, b) => a - b) // OPT: Isn't this the default sort?
+//   const half = Math.floor(values.length / 2)
+//   return values.length % 2
+//     ? values[half]
+//     : (values[half - 1] + values[half]) / 2.0
+// }
+// TODO: Different solution for graph...maybe victory or something...or maybe antd has something
+// if (tickIter % 100 === 0) {
+// var median_ppl = median(pplList)
+// pplList = []
+// pplGraph.add(tickIter, median_ppl)
+// pplGraph.drawSelf(document.getElementById('pplgraph'))
+// }
+// }

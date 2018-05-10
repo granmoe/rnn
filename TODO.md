@@ -1,9 +1,12 @@
+put forward method on model (diff for RNN and LSTM) and update call sites
+
 # TODO
 
 ## Restructure
 
 * [IN PROGRESS] Begin restructuring and improving Model
   * Need a way to give output to caller (prob callback)
+  * Restructure now with no consideration for loading from / dumping to JSON. Should be easy enough to add this later. Need to just get some paint on the canvas.
 * [IN PROGRESS] Tests: Run until the word "the" appears, assert that number of iterations is below a certain threshold
   * Maybe same for "to"
   * snapshot testing
@@ -40,3 +43,5 @@
 // out = new Mat({ weights: m.rowPluck(index) }) or something
 
 Use same tags as this https://github.com/mvrahden/recurrent-js
+
+// TODO: try messing with charCountThreshold sometime
