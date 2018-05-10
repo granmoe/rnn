@@ -199,6 +199,8 @@ function makeTrainFunc(model, textModel, hyperParams) {
         )
       }
 
+      // TODO: Maybe send out model and textModel...or maybe send these out from initial createModel?
+      // Just in case consumer wants to do something with them (like analytics, logging, whatever)
       callback({ argMaxPrediction, samples, iterations: tickIter }) // eslint-disable-line
     }
   }
