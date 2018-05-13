@@ -1,1 +1,1 @@
-export { createModel as default } from './Model'
+export { create as default } from './Model'

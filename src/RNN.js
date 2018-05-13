@@ -36,7 +36,7 @@ export function initLSTM(inputSize, hiddenSizes, outputSize) {
 }
 
 // TODO: further refactoring here and make sure to understand everything
-export function forwardLSTM(graph, model, x, prev, hyperParams) {
+export function forwardLSTM(graph, model, x, prev, hiddenSizes) {
   // forward prop for a single tick of LSTM
   // model contains LSTM parameters
   // x is 1D column vector with observation
@@ -45,16 +45,14 @@ export function forwardLSTM(graph, model, x, prev, hyperParams) {
 
   let hiddenPrevs, cellPrevs
   if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hyperParams.hiddenSizes.map(
-      hiddenSize => new Mat(hiddenSize, 1),
-    )
+    hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
     cellPrevs = [...hiddenPrevs]
   } else {
     hiddenPrevs = prev.h
     cellPrevs = prev.c
   }
 
-  const { hidden, cell } = hyperParams.hiddenSizes.reduce(
+  const { hidden, cell } = hiddenSizes.reduce(
     (result, hiddenSize, index, hiddenSizes) => {
       let inputVector = index === 0 ? x : result.hidden[index - 1]
       let hiddenPrev = hiddenPrevs[index]
@@ -137,7 +135,7 @@ export function initRNN(inputSize, hiddenSizes, outputSize) {
   return model
 }
 
-export function forwardRNN(graph, model, x, prev, hyperParams) {
+export function forwardRNN(graph, model, x, prev, hiddenSizes) {
   // forward prop for a single tick of RNN
   // model contains RNN parameters
   // x is 1D column vector with observation
@@ -147,14 +145,12 @@ export function forwardRNN(graph, model, x, prev, hyperParams) {
 
   let hiddenPrevs
   if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hyperParams.hiddenSizes.map(
-      hiddenSize => new Mat(hiddenSize, 1),
-    )
+    hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
   } else {
     hiddenPrevs = prev.h
   }
 
-  const h = hyperParams.hiddenSizes.reduce((result, hiddenSize, index) => {
+  const h = hiddenSizes.reduce((result, hiddenSize, index) => {
     let inputVector = index === 0 ? x : result[index - 1]
     let hiddenPrev = hiddenPrevs[index]
 

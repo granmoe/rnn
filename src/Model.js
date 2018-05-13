@@ -3,98 +3,119 @@ import Graph from './Graph'
 import { randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 
-// optimization
-const regc = 0.000001 // L2 regularization strength
-const learningRate = 0.01 // learning rate
-const clipval = 5.0 // clip gradients at this value
-// prediction params
-let sampleSoftmaxTemperature = 1.0 // how peaky model predictions should be
-let maxCharsGen = 100 // max length of generated sentences
-
-// let pplGraph = new Rvis()
-
-let lh, logprobs, probs
-
-function createTextModel(sentences, charCountThreshold = 1) {
-  // go over all characters and keep track of all unique ones seen
-  const charCounts = [...sentences.join('')].reduce((counts, char) => {
-    counts[char] = counts[char] ? counts[char] + 1 : (counts[char] = 1)
-    return counts
-  }, {})
-
-  // Note: inputSize is one greater than charList.length due to START and END tokens
-  // START token will be index 0 in model letter vectors
-  // END token will be index 0 in the next character softmax
-  const initialVocabData = {
-    sentences,
-    letterToIndex: {},
-    indexToLetter: {},
-    charList: [],
-    inputSize: 1,
-  }
-
-  return Object.entries(charCounts).reduce((result, [char, count]) => {
-    if (count >= charCountThreshold) {
-      result.charList.push(char)
-      result.letterToIndex[char] = result.charList.length
-      result.indexToLetter[result.charList.length] = char
-      result.inputSize += 1
-    }
-
-    return result
-  }, initialVocabData)
-  // epochSize = sentences.length
-  // TODO: Show this in the UI
-  // $('#prepro_status').text(
-  // 'found ' + charList.length + ' distinct characters: ' + charList.join(''),
-  // )
-}
-
-export function createModel(hyperParams) {
-  const {
+// returns a function that will train the model
+// TODO: make a "load" function
+export function create({
+  // BASIC HYPER PARAMS
+  type,
+  input,
+  hiddenSizes = [20, 20],
+  letterSize = 5,
+  charCountThreshold = 1,
+  // OPTIMIZATION HYPER PARAMS
+  regc = 0.000001, // L2 regularization strength
+  learningRate = 0.01,
+  clipVal = 5, // clip gradients at this value
+  // PREDICTION HYPER PARAMS
+  sampleSoftmaxTemperature = 1, // how peaky model predictions should be
+  maxCharsGen = 100, // max length of generated sentences
+}) {
+  const { model, textModel } = createModel({
     type,
+    input,
     hiddenSizes,
     letterSize,
-    input,
     charCountThreshold,
-  } = hyperParams
-  const sentences = input.split('\n').map(str => str.trim())
-  const textModel = createTextModel(sentences, charCountThreshold)
+  })
 
-  let model
-  if (type === 'rnn') {
-    model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
-  } else {
-    model = initLSTM(letterSize, hiddenSizes, textModel.inputSize)
+  window.model = model
+  let tickIter = 0
+  let solver = new Solver()
+  let lh, logprobs, probs
+
+  return function(callback, iterationsPerSample = 50) {
+    tickIter += 1
+    // sample sentence from data
+    const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
+    // evaluate cost function on a sentence
+    const cost = costFunc({
+      model,
+      textModel,
+      hiddenSizes,
+      sentence,
+      lh,
+      logprobs,
+      probs,
+    })
+    // use built up graph to compute backprop (set .dw fields in mats)
+    cost.G.runBackprop()
+    // perform param update
+    solver.step(model, learningRate, regc, clipVal)
+
+    if (tickIter % iterationsPerSample === 0) {
+      const argMaxPrediction = predictSentence({
+        model,
+        textModel,
+        hiddenSizes,
+        maxCharsGen,
+        sample: false,
+        lh,
+        logprobs,
+        probs,
+      })
+
+      let samples = []
+      for (let q = 0; q < 5; q++) {
+        samples.push(
+          predictSentence({
+            model,
+            textModel,
+            hiddenSizes,
+            maxCharsGen,
+            lh,
+            logprobs,
+            probs,
+            sample: true,
+            sampleSoftmaxTemperature,
+          }),
+        )
+      }
+
+      // TODO: Provide a way to "dump" the model at a checkpoint, or whenever the consumer calls a provided func
+      // Just in case consumer wants to do something with them (like analytics, logging, whatever)
+      callback({ argMaxPrediction, samples, iterations: tickIter }) // eslint-disable-line
+    }
   }
-
-  return makeTrainFunc(model, textModel, hyperParams)
 }
 
-function forwardIndex(G, model, ix, prev, hyperParams) {
+function forwardIndex(G, model, ix, prev, hiddenSizes) {
   // TODO: Should just be a method on the model
   // Then no need for branching based on h params and no need for so much indirection
   const x = G.rowPluck(model['Wil'], ix)
   // forward prop the sequence learner
-  return hyperParams.type === 'rnn'
-    ? forwardRNN(G, model, x, prev, hyperParams)
-    : forwardLSTM(G, model, x, prev, hyperParams)
+  return hiddenSizes.type === 'rnn'
+    ? forwardRNN(G, model, x, prev, hiddenSizes)
+    : forwardLSTM(G, model, x, prev, hiddenSizes)
 }
 
-function predictSentence(
+function predictSentence({
   model,
   textModel,
-  hyperParams,
+  hiddenSizes,
+  maxCharsGen,
   sample = false,
   temperature = 1.0,
-) {
+  lh,
+  logprobs,
+  probs,
+}) {
   let G = new Graph(false)
   let s = ''
   let prev = {}
   while (true) {
     // RNN tick
     let ix = s.length === 0 ? 0 : textModel.letterToIndex[s[s.length - 1]]
-    lh = forwardIndex(G, model, ix, prev, hyperParams)
+    lh = forwardIndex(G, model, ix, prev, hiddenSizes)
     prev = lh
 
     // sample predicted letter
@@ -127,7 +148,15 @@ function predictSentence(
   return s
 }
 
-function costFunc(model, textModel, hyperParams, sentence) {
+function costFunc({
+  model,
+  textModel,
+  hiddenSizes,
+  sentence,
+  lh,
+  logprobs,
+  probs,
+}) {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
@@ -141,7 +170,7 @@ function costFunc(model, textModel, hyperParams, sentence) {
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
     let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(G, model, ixSource, prev, hyperParams)
+    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes)
     prev = lh
 
     // set gradients into logprobabilities
@@ -159,52 +188,61 @@ function costFunc(model, textModel, hyperParams, sentence) {
   return { G, ppl, cost }
 }
 
-function makeTrainFunc(model, textModel, hyperParams) {
-  let tickIter = 0
-  let solver = new Solver() // should be class because it needs memory for step caches
+function createModel({
+  type,
+  hiddenSizes,
+  letterSize,
+  input,
+  charCountThreshold,
+}) {
+  const sentences = input.split('\n').map(str => str.trim())
+  const textModel = createTextModel(sentences, charCountThreshold)
 
-  return function(callback, iterationsPerSample = 50) {
-    tickIter += 1
-    // sample sentence from data
-    const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
-    // evaluate cost function on a sentence
-    const costStruct = costFunc(model, textModel, hyperParams, sentence)
-
-    // use built up graph to compute backprop (set .dw fields in mats)
-    costStruct.G.runBackprop()
-    // perform param update
-    solver.step(model, learningRate, regc, clipval)
-
-    // let solverStats = solver.step(model, learningRate, regc, clipval)
-    // $("#gradclip").text('grad clipped ratio: ' + solverStats.ratio_clipped)
-    // pplList.push(costStruct.ppl) // keep track of perplexity
-
-    if (tickIter % iterationsPerSample === 0) {
-      const argMaxPrediction = predictSentence(
-        model,
-        textModel,
-        hyperParams,
-        false,
-      )
-      let samples = []
-      for (let q = 0; q < 5; q++) {
-        samples.push(
-          predictSentence(
-            model,
-            textModel,
-            hyperParams,
-            true,
-            sampleSoftmaxTemperature,
-          ),
-        )
-      }
-
-      // TODO: Maybe send out model and textModel...or maybe send these out from initial createModel?
-      // Just in case consumer wants to do something with them (like analytics, logging, whatever)
-      callback({ argMaxPrediction, samples, iterations: tickIter }) // eslint-disable-line
-    }
+  let model
+  if (type === 'rnn') {
+    model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
+  } else {
+    model = initLSTM(letterSize, hiddenSizes, textModel.inputSize)
   }
+
+  return { model, textModel }
 }
+
+function createTextModel(sentences, charCountThreshold = 1) {
+  // go over all characters and keep track of all unique ones seen
+  const charCounts = [...sentences.join('')].reduce((counts, char) => {
+    counts[char] = counts[char] ? counts[char] + 1 : (counts[char] = 1)
+    return counts
+  }, {})
+
+  // Note: inputSize is one greater than charList.length due to START and END tokens
+  // START token will be index 0 in model letter vectors
+  // END token will be index 0 in the next character softmax
+  const initialVocabData = {
+    sentences,
+    letterToIndex: {},
+    indexToLetter: {},
+    charList: [],
+    inputSize: 1,
+  }
+
+  return Object.entries(charCounts).reduce((result, [char, count]) => {
+    if (count >= charCountThreshold) {
+      result.charList.push(char)
+      result.letterToIndex[char] = result.charList.length
+      result.indexToLetter[result.charList.length] = char
+      result.inputSize += 1
+    }
+
+    return result
+  }, initialVocabData)
+}
+
+// epochSize = sentences.length
+// TODO: Show this in the UI
+// $('#prepro_status').text(
+// 'found ' + charList.length + ' distinct characters: ' + charList.join(''),
+// )
 
 // if (tickIter % 10 === 0) {
 // draw argmax prediction
@@ -215,7 +253,7 @@ function makeTrainFunc(model, textModel, hyperParams) {
 // $('#argmax').append(pred_div)
 // // keep track of perplexity
 // $('#epoch').text('epoch: ' + (tickIter / epochSize).toFixed(2))
-// $('#ppl').text('perplexity: ' + costStruct.ppl.toFixed(2))
+// $('#ppl').text('perplexity: ' + cost.ppl.toFixed(2))
 // $('#ticktime').text(
 //   'forw/bwd time per example: ' + tickTime.toFixed(1) + 'ms',
 // )
@@ -234,3 +272,7 @@ function makeTrainFunc(model, textModel, hyperParams) {
 // pplGraph.drawSelf(document.getElementById('pplgraph'))
 // }
 // }
+
+// let solverStats = solver.step(model, learningRate, regc, clipVal)
+// $("#gradclip").text('grad clipped ratio: ' + solverStats.ratio_clipped)
+// pplList.push(cost.ppl) // keep track of perplexity

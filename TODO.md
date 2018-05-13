@@ -7,6 +7,7 @@
 * [IN PROGRESS] Tests: Run until the word "the" appears, assert that number of iterations is below a certain threshold
   * Maybe same for "to"
   * snapshot testing
+* Eliminate dep on setTimeout, have rnn responsible for looping training, provide start/stop mechanism
 * Need deeper understanding of how modules interact in order to further restructure and improve the code
   * Draw all the connections or something
 * review each module

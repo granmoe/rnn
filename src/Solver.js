@@ -8,15 +8,13 @@ export default class Solver {
     this.stepCache = {}
   }
 
-  step(model, stepSize, regc, clipval) {
+  step(model, stepSize, regc, clipVal) {
     // perform parameter update
     let solverStats = {}
     let numClipped = 0
     let numTot = 0
 
     for (const [k, m] of Object.entries(model)) {
-      if (!(m instanceof Mat)) return
-
       if (!(k in this.stepCache)) {
         this.stepCache[k] = new Mat(m.rows, m.cols)
       }
@@ -29,12 +27,12 @@ export default class Solver {
         s.w[i] = s.w[i] * this.decayRate + (1.0 - this.decayRate) * mdwi * mdwi
 
         // gradient clip
-        if (mdwi > clipval) {
-          mdwi = clipval
+        if (mdwi > clipVal) {
+          mdwi = clipVal
           numClipped++
         }
-        if (mdwi < -clipval) {
-          mdwi = -clipval
+        if (mdwi < -clipVal) {
+          mdwi = -clipVal
           numClipped++
         }
         numTot++
