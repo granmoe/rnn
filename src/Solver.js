@@ -1,6 +1,9 @@
 import Mat from './Mat'
 
-// updates weights
+// updates weights, then resets gradients to 0; uses gradient clipping
+// essentially just one function ("step") that side-effects model passed in
+// TODO: could just pass in the stuff that is stored in the constructor below, then this will just be a function
+// funny that there's no way for caller to control this stuff in the original code anyway
 export default class Solver {
   constructor() {
     this.decayRate = 0.999
