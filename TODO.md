@@ -2,32 +2,22 @@
 
 ## Restructure
 
+* implement from/to JSON, use this to set up snapshot tests
 * [IN PROGRESS] Restructuring and improving Model
   * put forward method on model (diff for RNN and LSTM) and update call sites
-* [IN PROGRESS] Tests: Run until the word "the" appears, assert that number of iterations is below a certain threshold
-  * Maybe same for "to"
-  * snapshot testing
-* Eliminate dep on setTimeout, have rnn responsible for looping training, provide start/stop mechanism
-* Need deeper understanding of how modules interact in order to further restructure and improve the code
-  * Draw all the connections or something
+  * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
 * review each module
   * Graph
     * Consider moving some of this code to other modules
-  * RNN
-    * Create an API so that code in recurrent pages/index can be generalized and moved into here
   * Solver
   * utils
-* After getting a solid understanding of the whole project, create a "Model" class and hang everything that gets set in initVocab on it, as well as obvious stuff
-  * Maybe model can also have solver and graph etc so that model gives you the full API and you don't have to piece things together
-  * review usages of rnn from recurrent after doing this
+
+## Ideas
+
 * functions (or generators?) and object factories instead of classes
 * optimize...maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
-* Ideas:
-  * Maybe use generator / call stack type data structure for Graph
-
-## Optimizations
-
-* from/to JSON
+* Maybe use generator / call stack type data structure for Graph
+* Any other way to implement loop other than setTimeout?
 
 ## Next
 

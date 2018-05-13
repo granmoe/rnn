@@ -29,11 +29,11 @@ export function create({
   })
 
   window.model = model
-  let tickIter = 0
   let solver = new Solver()
   let lh, logprobs, probs
 
-  return function(callback, iterationsPerSample = 50) {
+  let tickIter = 0
+  const runTraining = (callback, iterationsPerSample = 50) => {
     tickIter += 1
     // sample sentence from data
     const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
@@ -85,6 +85,23 @@ export function create({
       // Just in case consumer wants to do something with them (like analytics, logging, whatever)
       callback({ argMaxPrediction, samples, iterations: tickIter }) // eslint-disable-line
     }
+  }
+
+  let intervalId = null
+  return {
+    train(callback, iterationsPerSample) {
+      if (intervalId) return
+      intervalId = setInterval(() => {
+        runTraining(callback, iterationsPerSample)
+      }, 0)
+    },
+    pause() {
+      clearInterval(intervalId)
+      intervalId = null
+    },
+    // toJSON() {
+    // saves all hyper params and model, textModel, etc as JSON
+    // },
   }
 }
 
