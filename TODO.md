@@ -2,7 +2,7 @@
 
 ## Restructure
 
-* implement from/to JSON, use this to set up snapshot tests
+* use from/to JSON to implement snapshot tests
 * [IN PROGRESS] Restructuring and improving Model
   * put forward method on model (diff for RNN and LSTM) and update call sites
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
