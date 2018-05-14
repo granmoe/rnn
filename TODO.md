@@ -11,6 +11,7 @@
     * Consider moving some of this code to other modules
   * Solver
   * utils
+* Consumer can pass in perplexity when sampling
 
 ## Ideas
 

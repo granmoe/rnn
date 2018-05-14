@@ -1,6 +1,7 @@
 import { assert, randf } from './utils'
 
 // TODO: Change rows/cols to rowCount, colCount or numRows, numCols
+// TODO: Consider renaming w to weights and dw to gradients
 export default class Mat {
   constructor(rows, cols) {
     this.rows = rows
@@ -55,21 +56,19 @@ export default class Mat {
     return copy
   }
 
-  toJSON() {
-    let json = {}
-    json['rows'] = this.rows
-    json['cols'] = this.cols
-    json['w'] = this.w
-    return json
+  serialize() {
+    return {
+      rows: this.rows,
+      cols: this.cols,
+      weights: this.w,
+    }
   }
+}
 
-  fromJSON(json) {
-    this.rows = json.rows
-    this.cols = json.cols
-    this.dw = zeros(this.rows * this.cols)
-    this.w = new Float64Array(json.w)
-    return this
-  }
+export const matFromJson = ({ rows, cols, weights }) => {
+  const mat = new Mat(rows, cols)
+  mat.w = new Float64Array(Object.values(weights))
+  return mat
 }
 
 // return Mat but filled with random numbers from gaussian

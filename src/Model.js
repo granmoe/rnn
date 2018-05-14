@@ -2,9 +2,21 @@ import Solver from './Solver'
 import Graph from './Graph'
 import { randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
+import { matFromJson } from './Mat'
+
+export function loadFromJson(json) {
+  const args = JSON.parse(json)
+
+  return create({
+    ...args,
+    models: {
+      model: modelFromJson(args.models.model),
+      textModel: args.models.textModel,
+    },
+  })
+}
 
 // returns a function that will train the model
-// TODO: make a "load" function
 export function create({
   // BASIC HYPER PARAMS
   type,
@@ -19,16 +31,16 @@ export function create({
   // PREDICTION HYPER PARAMS
   sampleSoftmaxTemperature = 1, // how peaky model predictions should be
   maxCharsGen = 100, // max length of generated sentences
-}) {
-  const { model, textModel } = createModel({
+  models = createModels({
     type,
     input,
     hiddenSizes,
     letterSize,
     charCountThreshold,
-  })
+  }),
+}) {
+  const { model, textModel } = models
 
-  window.model = model
   let solver = new Solver()
   let lh, logprobs, probs
 
@@ -99,9 +111,24 @@ export function create({
       clearInterval(intervalId)
       intervalId = null
     },
-    // toJSON() {
-    // saves all hyper params and model, textModel, etc as JSON
-    // },
+    toJSON() {
+      return JSON.stringify({
+        type,
+        input,
+        hiddenSizes,
+        letterSize,
+        charCountThreshold,
+        regc,
+        learningRate,
+        clipVal,
+        sampleSoftmaxTemperature,
+        maxCharsGen,
+        models: {
+          textModel,
+          model: modelToJson(model),
+        },
+      })
+    },
   }
 }
 
@@ -205,7 +232,8 @@ function costFunc({
   return { G, ppl, cost }
 }
 
-function createModel({
+// TODO: This name is kind of awkward
+function createModels({
   type,
   hiddenSizes,
   letterSize,
@@ -254,6 +282,24 @@ function createTextModel(sentences, charCountThreshold = 1) {
     return result
   }, initialVocabData)
 }
+
+const modelToJson = model =>
+  Object.entries(model).reduce(
+    (result, [matName, mat]) => ({
+      ...result,
+      [matName]: mat.serialize(),
+    }),
+    {},
+  )
+
+const modelFromJson = model =>
+  Object.entries(model).reduce(
+    (result, [matName, matJson]) => ({
+      ...result,
+      [matName]: matFromJson(matJson),
+    }),
+    {},
+  )
 
 // epochSize = sentences.length
 // TODO: Show this in the UI
