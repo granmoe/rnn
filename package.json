@@ -4,8 +4,10 @@
   "description": "A modernized version of Andrej Karpathy's recurrent-js",
   "main": "dist/index.js",
   "scripts": {
-    "compile": "babel src -d dist",
-    "prepublishOnly": "npm run compile"
+    "compile": "babel src -d dist --ignore '**/*.spec.js'",
+    "dev": "babel --watch src -d dist --ignore '**/*.spec.js'",
+    "prepublishOnly": "npm run compile",
+    "test": "jest"
   },
   "prettier": {
     "singleQuote": true,

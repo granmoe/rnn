@@ -43,28 +43,28 @@ export function create({
 
   let solver = new Solver()
   let lh, logprobs, probs
-
   let tickIter = 0
-  const runTraining = (callback, iterationsPerSample = 50) => {
-    tickIter += 1
-    // sample sentence from data
-    const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
-    // evaluate cost function on a sentence
-    const cost = costFunc({
-      model,
-      textModel,
-      hiddenSizes,
-      sentence,
-      lh,
-      logprobs,
-      probs,
-    })
-    // use built up graph to compute backprop (set .dw fields in mats)
-    cost.G.runBackprop()
-    // perform param update
-    solver.step(model, learningRate, regc, clipVal)
 
-    if (tickIter % iterationsPerSample === 0) {
+  const train = ({ iterations = 1 } = {}) => {
+    for (let i = 0; i < iterations; i++) {
+      tickIter += 1
+      // sample sentence from data
+      const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
+      // evaluate cost function on a sentence
+      const cost = costFunc({
+        model,
+        textModel,
+        hiddenSizes,
+        sentence,
+        lh,
+        logprobs,
+        probs,
+      })
+      // use built up graph to compute backprop (set .dw fields in mats)
+      cost.G.runBackprop()
+      // perform param update
+      solver.step(model, learningRate, regc, clipVal)
+
       const argMaxPrediction = predictSentence({
         model,
         textModel,
@@ -93,42 +93,30 @@ export function create({
         )
       }
 
-      // TODO: Provide a way to "dump" the model at a checkpoint, or whenever the consumer calls a provided func
-      // Just in case consumer wants to do something with them (like analytics, logging, whatever)
-      callback({ argMaxPrediction, samples, iterations: tickIter }) // eslint-disable-line
+      return { argMaxPrediction, samples, iterations: tickIter }
     }
   }
 
-  let intervalId = null
+  const toJSON = () =>
+    JSON.stringify({
+      type,
+      hiddenSizes,
+      letterSize,
+      charCountThreshold,
+      regc,
+      learningRate,
+      clipVal,
+      sampleSoftmaxTemperature,
+      maxCharsGen,
+      models: {
+        textModel,
+        model: modelToJson(model),
+      },
+    })
+
   return {
-    train(callback, iterationsPerSample) {
-      if (intervalId) return
-      intervalId = setInterval(() => {
-        runTraining(callback, iterationsPerSample)
-      }, 0)
-    },
-    pause() {
-      clearInterval(intervalId)
-      intervalId = null
-    },
-    toJSON() {
-      return JSON.stringify({
-        type,
-        input,
-        hiddenSizes,
-        letterSize,
-        charCountThreshold,
-        regc,
-        learningRate,
-        clipVal,
-        sampleSoftmaxTemperature,
-        maxCharsGen,
-        models: {
-          textModel,
-          model: modelToJson(model),
-        },
-      })
-    },
+    train,
+    toJSON,
   }
 }
 

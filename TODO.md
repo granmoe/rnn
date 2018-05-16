@@ -2,7 +2,7 @@
 
 ## Restructure
 
-* use from/to JSON to implement snapshot tests
+* [IN PROGRESS] Figure out a way to get deterministic output from model to facilitate testing, expose predictSentence, costFunc, etc in API
 * [IN PROGRESS] Restructuring and improving Model
   * put forward method on model (diff for RNN and LSTM) and update call sites
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
@@ -18,7 +18,10 @@
 * functions (or generators?) and object factories instead of classes
 * optimize...maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
 * Maybe use generator / call stack type data structure for Graph
-* Any other way to implement loop other than setTimeout?
+
+## Optimizations
+
+* checkpoint callback
 
 ## Next
 
