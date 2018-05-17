@@ -45,7 +45,7 @@ export function create({
   let lh, logprobs, probs
   let tickIter = 0
 
-  const train = ({ iterations = 1 } = {}) => {
+  const train = ({ iterations = 1, temperature = 1 } = {}) => {
     for (let i = 0; i < iterations; i++) {
       tickIter += 1
       // sample sentence from data
@@ -72,6 +72,7 @@ export function create({
         maxCharsGen,
         sample: false,
         lh,
+        temperature,
         logprobs,
         probs,
       })
@@ -136,7 +137,7 @@ function predictSentence({
   hiddenSizes,
   maxCharsGen,
   sample = false,
-  temperature = 1.0,
+  temperature = 1,
   lh,
   logprobs,
   probs,
@@ -152,7 +153,7 @@ function predictSentence({
 
     // sample predicted letter
     logprobs = lh.o
-    if (temperature !== 1.0 && sample) {
+    if (temperature !== 1 && sample) {
       // scale log probabilities by temperature and renormalize
       // if temperature is high, logprobs will go towards zero
       // and the softmax outputs will be more diffuse. if temperature is
@@ -180,6 +181,8 @@ function predictSentence({
   return s
 }
 
+// TODO
+// side-effects: model, lh, logprobs, probs
 function costFunc({
   model,
   textModel,
