@@ -2,7 +2,6 @@
 
 ## Restructure
 
-* Temp sampling not working
 * [IN PROGRESS] Figure out a way to get deterministic output from model to facilitate testing, expose predictSentence, costFunc, etc in API (prob would be much easier after cleaning these up)
 * [IN PROGRESS] Restructuring and improving Model
   * put forward method on model (diff for RNN and LSTM) and update call sites
