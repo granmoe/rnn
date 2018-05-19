@@ -29,7 +29,7 @@ export function create({
   learningRate = 0.01,
   clipVal = 5, // clip gradients at this value
   // PREDICTION HYPER PARAMS
-  sampleSoftmaxTemperature = 1, // how peaky model predictions should be
+  temperature = 1, // how peaky model predictions should be
   maxCharsGen = 100, // max length of generated sentences
   models = createModels({
     type,
@@ -89,7 +89,7 @@ export function create({
             logprobs,
             probs,
             sample: true,
-            sampleSoftmaxTemperature,
+            temperature,
           }),
         )
       }
@@ -107,7 +107,7 @@ export function create({
       regc,
       learningRate,
       clipVal,
-      sampleSoftmaxTemperature,
+      temperature,
       maxCharsGen,
       models: {
         textModel,
@@ -171,13 +171,12 @@ function predictSentence({
     }
 
     if (ix === 0) break // END token predicted, break out
-    if (s.length > maxCharsGen) {
-      break
-    } // something is wrong
+    if (s.length > maxCharsGen) break // something is wrong
 
     let letter = textModel.indexToLetter[ix]
     s += letter
   }
+
   return s
 }
 

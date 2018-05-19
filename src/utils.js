@@ -37,19 +37,15 @@ export const randf = (a, b) => Math.random() * (b - a) + a
 export const randi = (a, b) => Math.floor(Math.random() * (b - a) + a)
 
 // TODO: Variable names here suck
-export function maxi(w) {
-  // argmax of array w
-  let maxv = w[0]
-  let maxix = 0
-  w.forEach((w, i) => {
-    if (w > maxv) {
-      maxv = w
-      maxix = i
-    }
-  })
-
-  return maxix
-}
+// I think the original code was only iterating through the second-to-last item
+// in order to make predictSentence work (to account for end token)
+// Maybe this func should be simplified to just return max ix of array
+// And caller should be responsible for passing in the array that
+// Already excludes the last item
+export const maxi = weights =>
+  weights
+    .slice(0, weights.length - 1)
+    .reduce((maxIndex, w, i, arr) => (w > arr[maxIndex] ? i : maxIndex), 0)
 
 export function samplei(w) {
   // sample argmax from w, assuming w are probabilities that sum to one
@@ -62,7 +58,7 @@ export function samplei(w) {
     i++
   }
 
-  return i
+  return i - 1 // TODO: Need to rework all this cryptic logic that accounts for end token in a far removed module
 }
 
 export function softmax(m) {
@@ -85,4 +81,3 @@ export function softmax(m) {
   // probabilities outside to set gradients directly on m
   return out
 }
-
