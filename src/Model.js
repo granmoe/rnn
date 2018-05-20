@@ -42,7 +42,6 @@ export function create({
   const { model, textModel } = models
 
   let solver = new Solver()
-  let lh, logprobs, probs
   let tickIter = 0
 
   const train = ({ iterations = 1, temperature = 1 } = {}) => {
@@ -56,9 +55,6 @@ export function create({
         textModel,
         hiddenSizes,
         sentence,
-        lh,
-        logprobs,
-        probs,
       })
       // use built up graph to compute backprop (set .dw fields in mats)
       cost.G.runBackprop()
@@ -71,10 +67,7 @@ export function create({
         hiddenSizes,
         maxCharsGen,
         sample: false,
-        lh,
         temperature,
-        logprobs,
-        probs,
       })
 
       let samples = []
@@ -85,9 +78,6 @@ export function create({
             textModel,
             hiddenSizes,
             maxCharsGen,
-            lh,
-            logprobs,
-            probs,
             sample: true,
             temperature,
           }),
@@ -138,10 +128,8 @@ function predictSentence({
   maxCharsGen,
   sample = false,
   temperature = 1,
-  lh,
-  logprobs,
-  probs,
 }) {
+  let lh, logprobs, probs
   let G = new Graph(false)
   let s = ''
   let prev = {}
@@ -182,18 +170,11 @@ function predictSentence({
 
 // TODO
 // side-effects: model, lh, logprobs, probs
-function costFunc({
-  model,
-  textModel,
-  hiddenSizes,
-  sentence,
-  lh,
-  logprobs,
-  probs,
-}) {
+function costFunc({ model, textModel, hiddenSizes, sentence }) {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
+  let lh, logprobs, probs
   let n = sentence.length
   let G = new Graph()
   let log2ppl = 0.0

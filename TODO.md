@@ -14,6 +14,10 @@
   * utils
 * Consumer can pass in perplexity when sampling
 
+## Bugs
+
+* If charCountThreshold is > 1, need to filter out excluded chars from input sentences, otherwise shit blows up (text model doesn't have all the chars that are in input). I.e., filter input to include only chars in text model.
+
 ## Ideas
 
 * functions (or generators?) and object factories instead of classes
@@ -22,6 +26,7 @@
 
 ## Optimizations
 
+* use web worker https://survivejs.com/webpack/techniques/web-workers/
 * checkpoint callback
 
 ## Next
