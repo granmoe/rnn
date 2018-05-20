@@ -8,11 +8,13 @@
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
     * Notate side-effects
 * review each module
-  * Graph
-    * Consider moving some of this code to other modules
+  * Model
+  * RNN
   * Solver
-  * utils
-* Consumer can pass in perplexity when sampling
+  * Utils
+  * Mat (done)
+  * Graph (done)
+    * Consider moving some of this code to other modules
 
 ## Bugs
 

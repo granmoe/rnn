@@ -81,3 +81,9 @@ export function softmax(m) {
   // probabilities outside to set gradients directly on m
   return out
 }
+
+export const repeat = (count, func) => {
+  for (let i = 1; i <= count; i++) {
+    func()
+  }
+}
