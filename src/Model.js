@@ -42,11 +42,13 @@ export function create({
   const { model, textModel } = models
 
   let solver = new Solver()
-  let tickIter = 0
+  let totalIterations = 1
 
   const train = ({ iterations = 1, temperature = 1 } = {}) => {
+    let currentIteration = 1
+    let result
+
     repeat(iterations, () => {
-      tickIter += 1
       // sample sentence from data
       const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
       // evaluate cost function on a sentence
@@ -84,8 +86,15 @@ export function create({
         )
       })
 
-      return { argMaxPrediction, samples, iterations: tickIter }
+      if (currentIteration === iterations) {
+        result = { argMaxPrediction, samples, iterations: totalIterations }
+      }
+
+      currentIteration += 1
+      totalIterations += 1
     })
+
+    return result
   }
 
   const toJSON = () =>
