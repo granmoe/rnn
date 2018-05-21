@@ -163,7 +163,7 @@ export function predictSentence({
       // If temperature is high, logprobs will go towards zero,
       // and the softmax outputs will be more diffuse. If temperature is
       // very low, the softmax outputs will be more peaky
-      logprobs.w = logprobs.w.map(w => w / temperature)
+      logprobs.updateW(w => w / temperature)
     }
 
     probs = softmax(logprobs)
@@ -173,7 +173,7 @@ export function predictSentence({
       charIndex = maxi(probs.w)
     }
 
-    sentence += textModel.indexToLetter[charIndex]
+    if (charIndex !== 0) sentence += textModel.indexToLetter[charIndex]
     // 0 index is END token, maxCharsGen is a way to limit the max length of predictions
   } while (charIndex !== 0 && sentence.length <= maxCharsGen)
 
