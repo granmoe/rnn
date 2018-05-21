@@ -4,6 +4,7 @@ import { repeat, randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 import { matFromJson } from './Mat'
 
+// TODO: What is the normal casing for "json" in a func name?
 export function loadFromJson(json) {
   const args = JSON.parse(json)
 
@@ -26,7 +27,6 @@ export function create({
   charCountThreshold = 1,
   // OPTIMIZATION HYPER PARAMS
   regc = 0.000001, // L2 regularization strength
-  learningRate = 0.01,
   clipVal = 5, // clip gradients at this value
   // PREDICTION HYPER PARAMS
   temperature = 1, // how peaky model predictions should be
@@ -44,11 +44,16 @@ export function create({
   let solver = new Solver()
   let totalIterations = 1
 
-  const train = ({ iterations = 1, temperature = 1 } = {}) => {
+  const train = ({
+    iterations = 1,
+    temperature = 1,
+    learningRate = 0.01,
+  } = {}) => {
     let currentIteration = 1
     let result
 
     repeat(iterations, () => {
+      // TRAIN MODEL (DO FORWARD / BACKWARD PROP AND REGULARIZE AND CLIP GRADIENTS)
       // sample sentence from data
       const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
       // evaluate cost function on a sentence
@@ -63,6 +68,7 @@ export function create({
       // perform param update
       solver.step(model, learningRate, regc, clipVal)
 
+      // GET SAMPLES
       const argMaxPrediction = predictSentence({
         model,
         textModel,
@@ -73,7 +79,7 @@ export function create({
       })
 
       let samples = []
-      repeat(5, () => {
+      repeat(3, () => {
         samples.push(
           predictSentence({
             model,
@@ -104,7 +110,6 @@ export function create({
       letterSize,
       charCountThreshold,
       regc,
-      learningRate,
       clipVal,
       temperature,
       maxCharsGen,
@@ -117,6 +122,12 @@ export function create({
   return {
     train,
     toJSON,
+    models: {
+      model,
+      textModel,
+    },
+    hiddenSizes,
+    maxCharsGen,
   }
 }
 
@@ -130,7 +141,7 @@ function forwardIndex(G, model, ix, prev, hiddenSizes) {
     : forwardLSTM(G, model, x, prev, hiddenSizes)
 }
 
-function predictSentence({
+export function predictSentence({
   model,
   textModel,
   hiddenSizes,
@@ -139,7 +150,7 @@ function predictSentence({
   temperature = 1,
 }) {
   let lh, logprobs, probs
-  let G = new Graph(false)
+  let G = new Graph({ doBackprop: false }) // Just predict (forward), don't do backprop
   let s = ''
   let prev = {}
   while (true) {
@@ -168,7 +179,7 @@ function predictSentence({
     }
 
     if (ix === 0) break // END token predicted, break out
-    if (s.length > maxCharsGen) break // something is wrong
+    if (s.length > maxCharsGen) break // something is wrong TODO: Could this ever get hit? Depends on training data?
 
     let letter = textModel.indexToLetter[ix]
     s += letter
@@ -194,7 +205,7 @@ function costFunc({ model, textModel, hiddenSizes, sentence }) {
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
     let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes)
+    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model. Also, this is used in predictSentence, too. Can one of these be eliminated? Maybe call in parent func and pass to both costFunc and predictSentence?
     prev = lh
 
     // set gradients into logprobabilities
@@ -235,7 +246,8 @@ function createModels({
 
 function createTextModel(sentences, charCountThreshold = 1) {
   // go over all characters and keep track of all unique ones seen
-  const charCounts = [...sentences.join('')].reduce((counts, char) => {
+  const tokens = tokenize({ input: sentences, level: 'char' })
+  const charCounts = tokens.reduce((counts, char) => {
     counts[char] = counts[char] ? counts[char] + 1 : (counts[char] = 1)
     return counts
   }, {})
@@ -261,6 +273,14 @@ function createTextModel(sentences, charCountThreshold = 1) {
 
     return result
   }, initialVocabData)
+}
+
+const tokenize = ({ input, level = 'char' }) => {
+  if (level === 'char') {
+    return [...input.join('')]
+  } else if (level === 'word') {
+    return input.join(' ').split(/\b/)
+  }
 }
 
 const modelToJson = model =>

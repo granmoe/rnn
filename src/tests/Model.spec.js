@@ -1,36 +1,25 @@
-import { create, loadFromJson } from '../Model'
-import { rnnJson, input } from './model-test-data'
+import { loadFromJson, predictSentence } from '../Model'
+import { rnnJson } from './model-test-data'
 
-test('train function output matches snapshot', done => {
-  const { train, pause } = loadFromJson(rnnJson)
-  train(result => {
-    expect(result.argMaxPrediction).toMatchSnapshot()
-    pause()
-    done()
-  }, 1)
-})
+// TODO: How to test with sample: true?
+test('predictSentence output matches snapshot', () => {
+  const lstm = loadFromJson(rnnJson)
+  const {
+    models: { model, textModel },
+    hiddenSizes,
+    maxCharsGen,
+  } = lstm
 
-test('loadFromJson produces same result as create', done => {
-  const originalLSTM = create({
-    type: 'lstm',
-    input,
-    letterSize: 5,
-    hiddenSizes: [20, 20],
+  const predictedSentence = predictSentence({
+    model,
+    textModel,
+    hiddenSizes,
+    maxCharsGen,
+    sample: false,
+    temperature: 1,
   })
 
-  const json = originalLSTM.toJSON()
-  const copiedLSTM = loadFromJson(json)
-
-  originalLSTM.train(result => {
-    const originalLSTMResult = result.argMaxPrediction
-    originalLSTM.pause()
-
-    copiedLSTM.train(result => {
-      const copiedLSTMResult = result.argMaxPrediction
-      copiedLSTM.pause()
-      console.log(originalLSTMResult, copiedLSTMResult)
-      expect(originalLSTMResult).toEqual(copiedLSTMResult)
-      done()
-    }, 1)
-  }, 1)
+  expect(predictedSentence).toMatchSnapshot()
 })
+
+// TODO: test('loadFromJson produces same result as create', () => {

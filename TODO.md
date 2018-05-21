@@ -2,7 +2,6 @@
 
 ## Restructure
 
-* [IN PROGRESS] Figure out a way to get deterministic output from model to facilitate testing, expose predictSentence, costFunc, etc in API (prob would be much easier after cleaning these up)
 * [IN PROGRESS] Restructuring and improving Model
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
     * Notate side-effects
@@ -25,13 +24,16 @@
 ## Ideas
 
 * functions (or generators?) and object factories instead of classes
-* optimize...maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
+* Maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
 * Maybe use generator / call stack type data structure for Graph
+* Create word-level version of this (basically just tokenize into words using some function and then use words in place of letters...sentence becomes array of words instead of letters)
 
 ## Optimizations
 
+* checkpoint callback (write to local storage?)
+* Optimize for perf in node.js env
+* Port to other languages. Go?
 * use web worker https://survivejs.com/webpack/techniques/web-workers/
-* checkpoint callback
 
 ## Next
 

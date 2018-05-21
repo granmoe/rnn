@@ -45,7 +45,11 @@ export const randi = (a, b) => Math.floor(Math.random() * (b - a) + a)
 export const maxi = weights =>
   weights
     .slice(0, weights.length - 1)
-    .reduce((maxIndex, w, i, arr) => (w > arr[maxIndex] ? i : maxIndex), 0)
+    .reduce(
+      (maxIndex, weight, weightIndex, weights) =>
+        weight > weights[maxIndex] ? weightIndex : maxIndex,
+      0,
+    )
 
 export function samplei(w) {
   // sample argmax from w, assuming w are probabilities that sum to one
