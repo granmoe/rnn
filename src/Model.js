@@ -2,16 +2,15 @@ import Solver from './Solver'
 import Graph from './Graph'
 import { repeat, randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
-import { matFromJson } from './Mat'
+import { matFromJSON } from './Mat'
 
-// TODO: What is the normal casing for "json" in a func name?
-export function loadFromJson(json) {
+export function loadFromJSON(json) {
   const args = JSON.parse(json)
 
   return create({
     ...args,
     models: {
-      model: modelFromJson(args.models.model),
+      model: modelFromJSON(args.models.model),
       textModel: args.models.textModel,
     },
   })
@@ -115,7 +114,7 @@ export function create({
       maxCharsGen,
       models: {
         textModel,
-        model: modelToJson(model),
+        model: modelToJSON(model),
       },
     })
 
@@ -165,13 +164,9 @@ export function predictSentence({
       // very low, the softmax outputs will be more peaky
       logprobs.updateW(w => w / temperature)
     }
-
     probs = softmax(logprobs)
-    if (sample) {
-      charIndex = samplei(probs.w)
-    } else {
-      charIndex = maxi(probs.w)
-    }
+
+    charIndex = sample ? samplei(probs.w) : maxi(probs.w)
 
     if (charIndex !== 0) sentence += textModel.indexToLetter[charIndex]
     // 0 index is END token, maxCharsGen is a way to limit the max length of predictions
@@ -180,13 +175,12 @@ export function predictSentence({
   return sentence
 }
 
-// TODO
-// side-effects: model, lh, logprobs, probs
-function costFunc({ model, textModel, hiddenSizes, sentence }) {
+// TODO: side-effects model? maybe not
+export function costFunc({ model, textModel, hiddenSizes, sentence }) {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
-  let lh, logprobs, probs
+  let lh, probs
   let n = sentence.length
   let G = new Graph()
   let log2ppl = 0.0
@@ -197,19 +191,17 @@ function costFunc({ model, textModel, hiddenSizes, sentence }) {
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
     let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model? Also, this is used in predictSentence, too. Can one of these be eliminated? Maybe call in parent func and pass to both costFunc and predictSentence?
-    prev = lh
+    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model?
 
-    // set gradients into logprobabilities
-    logprobs = lh.o // interpret output as logprobs
-    probs = softmax(logprobs) // compute the softmax probabilities
+    probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
 
     log2ppl += -Math.log2(probs.w[ixTarget]) // accumulate base 2 log prob and do smoothing
     cost += -Math.log(probs.w[ixTarget])
 
-    // write gradients into log probabilities
-    logprobs.dw = probs.w
-    logprobs.dw[ixTarget] -= 1
+    // write gradients into log probabilities...used next iter via prev
+    lh.o.dw = probs.w
+    lh.o.dw[ixTarget] -= 1
+    prev = lh
   }
   const ppl = Math.pow(2, log2ppl / (n - 1))
   return { G, ppl, cost }
@@ -275,7 +267,7 @@ const tokenize = ({ input, level = 'char' }) => {
   }
 }
 
-const modelToJson = model =>
+const modelToJSON = model =>
   Object.entries(model).reduce(
     (result, [matName, mat]) => ({
       ...result,
@@ -284,11 +276,11 @@ const modelToJson = model =>
     {},
   )
 
-const modelFromJson = model =>
+const modelFromJSON = model =>
   Object.entries(model).reduce(
-    (result, [matName, matJson]) => ({
+    (result, [matName, matJSON]) => ({
       ...result,
-      [matName]: matFromJson(matJson),
+      [matName]: matFromJSON(matJSON),
     }),
     {},
   )

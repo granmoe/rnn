@@ -1,1 +1,1 @@
-export { create as default, loadFromJson } from './Model'
+export { create as default, loadFromJSON } from './Model'

@@ -65,7 +65,7 @@ export default class Mat {
   }
 }
 
-export const matFromJson = ({ rows, cols, weights }) => {
+export const matFromJSON = ({ rows, cols, weights }) => {
   const mat = new Mat(rows, cols)
   mat.w = new Float64Array(Object.values(weights))
   return mat

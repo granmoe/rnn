@@ -1,9 +1,9 @@
-import { loadFromJson, predictSentence } from '../Model'
-import { rnnJson } from './model-test-data'
+import { loadFromJSON, predictSentence, costFunc } from '../Model'
+import { rnnJSON } from './model-test-data'
 
 // TODO: How to test with sample: true?
 test('predictSentence output matches snapshot', () => {
-  const lstm = loadFromJson(rnnJson)
+  const lstm = loadFromJSON(rnnJSON)
   const {
     models: { model, textModel },
     hiddenSizes,
@@ -22,4 +22,22 @@ test('predictSentence output matches snapshot', () => {
   expect(predictedSentence).toMatchSnapshot()
 })
 
-// TODO: test('loadFromJson produces same result as create', () => {
+test('costFunc output matches snapshot', () => {
+  const lstm = loadFromJSON(rnnJSON)
+  const {
+    models: { model, textModel },
+    hiddenSizes,
+  } = lstm
+
+  const cost = costFunc({
+    model,
+    textModel,
+    hiddenSizes,
+    sentence: 'this is a test sentence',
+  })
+
+  expect(cost).toMatchSnapshot()
+})
+
+// TODO: test('loadFromJSON produces same result as create', () => {
+// AND: test more variations of above two functions

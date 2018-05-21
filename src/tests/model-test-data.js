@@ -1,4 +1,4 @@
-export const rnnJson = JSON.stringify({
+export const rnnJSON = JSON.stringify({
   type: 'lstm',
   hiddenSizes: [20, 20],
   letterSize: 5,

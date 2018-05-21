@@ -7,9 +7,7 @@
     * Notate side-effects
 * review each module
   * Model
-    * predictSentence [IN PROGRESS]
     * costFunc
-    * forwardIndex
   * RNN
   * Solver
   * Utils
