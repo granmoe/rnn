@@ -1,7 +1,7 @@
 import Mat from './Mat'
 
 export const updateMats = func => (...mats) => {
-  // TODO: Assert that all mats have same length
+  // TODO (someday): Assert that all mats have same length
   // I wonder if this whole loop and inner loop and everything could be one reduce?
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
   for (let i = 0; i < mats[0].w.length; i++) {
@@ -62,7 +62,7 @@ export function samplei(w) {
     i++
   }
 
-  return i - 1 // TODO: Need to rework all this cryptic logic that accounts for end token in a far removed module
+  return i - 1
 }
 
 export function softmax(m) {

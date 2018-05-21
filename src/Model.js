@@ -132,8 +132,6 @@ export function create({
 }
 
 function forwardIndex(G, model, ix, prev, hiddenSizes) {
-  // TODO: Should just be a method on the model
-  // Then no need for branching based on h params and no need for so much indirection
   const x = G.rowPluck(model['Wil'], ix)
   // forward prop the sequence learner
   return hiddenSizes.type === 'rnn'
@@ -151,41 +149,35 @@ export function predictSentence({
 }) {
   let lh, logprobs, probs
   let G = new Graph({ doBackprop: false }) // Just predict (forward), don't do backprop
-  let s = ''
+  let sentence = ''
   let prev = {}
-  while (true) {
-    // RNN tick
-    let ix = s.length === 0 ? 0 : textModel.letterToIndex[s[s.length - 1]]
-    lh = forwardIndex(G, model, ix, prev, hiddenSizes)
+  let charIndex = 0
+
+  do {
+    lh = forwardIndex(G, model, charIndex, prev, hiddenSizes)
     prev = lh
 
-    // sample predicted letter
     logprobs = lh.o
     if (temperature !== 1 && sample) {
-      // scale log probabilities by temperature and renormalize
-      // if temperature is high, logprobs will go towards zero
-      // and the softmax outputs will be more diffuse. if temperature is
+      // Scale log probabilities by temperature and renormalize
+      // If temperature is high, logprobs will go towards zero,
+      // and the softmax outputs will be more diffuse. If temperature is
       // very low, the softmax outputs will be more peaky
-      for (let q = 0, nq = logprobs.w.length; q < nq; q++) {
-        logprobs.w[q] /= temperature
-      }
+      logprobs.w = logprobs.w.map(w => w / temperature)
     }
 
     probs = softmax(logprobs)
     if (sample) {
-      ix = samplei(probs.w)
+      charIndex = samplei(probs.w)
     } else {
-      ix = maxi(probs.w)
+      charIndex = maxi(probs.w)
     }
 
-    if (ix === 0) break // END token predicted, break out
-    if (s.length > maxCharsGen) break // something is wrong TODO: Could this ever get hit? Depends on training data?
+    sentence += textModel.indexToLetter[charIndex]
+    // 0 index is END token, maxCharsGen is a way to limit the max length of predictions
+  } while (charIndex !== 0 && sentence.length <= maxCharsGen)
 
-    let letter = textModel.indexToLetter[ix]
-    s += letter
-  }
-
-  return s
+  return sentence
 }
 
 // TODO
@@ -205,7 +197,7 @@ function costFunc({ model, textModel, hiddenSizes, sentence }) {
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
     let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model. Also, this is used in predictSentence, too. Can one of these be eliminated? Maybe call in parent func and pass to both costFunc and predictSentence?
+    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model? Also, this is used in predictSentence, too. Can one of these be eliminated? Maybe call in parent func and pass to both costFunc and predictSentence?
     prev = lh
 
     // set gradients into logprobabilities
