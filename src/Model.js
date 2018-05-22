@@ -50,6 +50,7 @@ export function create({
   } = {}) => {
     let currentIteration = 1
     let result
+    let lastPpl, lastCost
 
     repeat(iterations, () => {
       // TRAIN MODEL (DO FORWARD / BACKWARD PROP AND REGULARIZE AND CLIP GRADIENTS)
@@ -92,7 +93,13 @@ export function create({
       })
 
       if (currentIteration === iterations) {
-        result = { argMaxPrediction, samples, iterations: totalIterations }
+        result = {
+          argMaxPrediction,
+          samples,
+          iterations: totalIterations,
+          perplexity: calculateRunningAverage(lastPpl, cost.ppl),
+          cost: calculateRunningAverage(lastCost, cost.cost),
+        }
       }
 
       currentIteration += 1
@@ -100,6 +107,14 @@ export function create({
     })
 
     return result
+  }
+
+  const calculateRunningAverage = (lastAverage, newValue) => {
+    if (lastAverage === undefined) {
+      return newValue
+    } else {
+      return (lastAverage + newValue) / 2
+    }
   }
 
   const toJSON = () =>
@@ -186,6 +201,7 @@ export function costFunc({ model, textModel, hiddenSizes, sentence }) {
   let log2ppl = 0.0
   let cost = 0.0
   let prev = {}
+
   for (let i = -1; i < n; i++) {
     // start and end tokens are zeros
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
@@ -198,11 +214,12 @@ export function costFunc({ model, textModel, hiddenSizes, sentence }) {
     log2ppl += -Math.log2(probs.w[ixTarget]) // accumulate base 2 log prob and do smoothing
     cost += -Math.log(probs.w[ixTarget])
 
-    // write gradients into log probabilities...used next iter via prev
+    // write gradients into log probabilities (this might not do anything)
     lh.o.dw = probs.w
     lh.o.dw[ixTarget] -= 1
     prev = lh
   }
+
   const ppl = Math.pow(2, log2ppl / (n - 1))
   return { G, ppl, cost }
 }
