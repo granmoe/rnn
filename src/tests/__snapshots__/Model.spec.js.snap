@@ -1279,9 +1279,9 @@ Object {
     ],
     "doBackprop": true,
   },
-  "cost": 69.17909748851844,
-  "ppl": 23.20817137957938,
+  "cost": 53.44277632796922,
+  "ppl": 11.349992757446673,
 }
 `;
 
-exports[`predictSentence output matches snapshot 1`] = `"teaeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"`;
+exports[`predictSentence output matches snapshot 1`] = `"the stong the stong"`;

@@ -11,6 +11,8 @@
     * costFunc
   * RNN
   * Solver
+    * Make solver a pure func, store stepCache somewhere else (where?)
+      * Cleanup model/solver toJSON after refactoring solver
   * Utils
   * Mat (done)
   * Graph (done)
