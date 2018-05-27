@@ -165,15 +165,14 @@ export function predictSentence({
   return sentence
 }
 
-// TODO: side-effects model? maybe not
 export function computeCost({ model, textModel, hiddenSizes, sentence }) {
   // Takes a model and a sentence and calculates the loss.
   // Also returns the Graph object used to do backprop
   let lh, probs
   let n = sentence.length
   let graph = new Graph()
-  let log2ppl = 0.0
-  let cost = 0.0
+  let log2ppl = 0
+  let cost = 0
   let prev = {}
 
   for (let i = -1; i < n; i++) {
@@ -181,7 +180,7 @@ export function computeCost({ model, textModel, hiddenSizes, sentence }) {
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
     let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model?
+    lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes)
 
     probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
 
