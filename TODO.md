@@ -1,8 +1,11 @@
 # TODO
 
-## Restructure
+## Inbox
 
 * Need to reorganize model...too big. Maybe split out everything not related to creating/loading/serializing...or split out to/from json into a separate file?
+
+## Restructure
+
 * [IN PROGRESS] Update tests per change to to/fromJSON
 * [IN PROGRESS] Restructuring and improving Model
   * [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - whole obj needed for prev? if not, maybe lh.o.... = ... at end of costFunc does nothing and can be deleted? I think only h and c are needed
@@ -18,6 +21,7 @@
   * Mat (done)
   * Graph (done)
     * Consider moving some of this code to other modules
+* get a solid understanding of relationships between all modules and how forward/backward prop works in this code, then consider major restructuring
 
 ## Bugs
 
@@ -50,4 +54,4 @@
 
 Use same tags as this https://github.com/mvrahden/recurrent-js
 
-// TODO: try messing with charCountThreshold sometime
+// TODO: try messing with charCountThreshold sometime (need to fix bug above first)
