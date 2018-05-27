@@ -1,4 +1,4 @@
-import Solver from './Solver'
+import optimize from './optimize'
 import Graph from './Graph'
 import { repeat, randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
@@ -6,12 +6,10 @@ import { matFromJSON } from './Mat'
 
 export function loadFromJSON(json) {
   const args = JSON.parse(json)
-  const solver = new Solver()
-  solver.stepCache = modelFromJSON(args.solver.stepCache)
 
   return create({
     ...args,
-    solver,
+    stepCache: modelFromJSON(args.stepCache),
     models: {
       model: modelFromJSON(args.models.model),
       textModel: args.models.textModel,
@@ -30,9 +28,10 @@ export function create({
   // OPTIMIZATION HYPER PARAMS
   regc = 0.000001, // L2 regularization strength
   clipVal = 5, // clip gradients at this value
-  maxCharsGen = 100, // max length of generated sentences
-  totalIterations = 1,
-  solver = new Solver(),
+  totalIterations = 0,
+  stepCache = {},
+  decayRate = 0.999,
+  smoothEps = 1e-8,
   models = createModels({
     type,
     input,
@@ -44,81 +43,69 @@ export function create({
   const { model, textModel } = models
 
   const train = ({
-    iterations = 1,
+    numIterations = 1,
     temperature = 1, // how peaky model predictions should be
     learningRate = 0.01,
+    maxCharsGen,
   } = {}) =>
-    repeat(
-      iterations,
-      (prevResult, currentIteration) => {
-        // TRAIN MODEL (DO FORWARD / BACKWARD PROP AND REGULARIZE AND CLIP GRADIENTS)
-        // sample sentence from data
-        const sentence =
-          textModel.sentences[randi(0, textModel.sentences.length)]
-        // evaluate cost function on a sentence
-        const cost = costFunc({
+    repeat(numIterations, currentIteration => {
+      totalIterations += 1
+      // TRAIN MODEL (DO FORWARD / BACKWARD PROP AND REGULARIZE AND CLIP GRADIENTS)
+      // get random sentence from data
+      const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
+      // evaluate cost function on sentence
+      const cost = costFunc({
+        model,
+        textModel,
+        hiddenSizes,
+        sentence,
+      })
+      // use built up graph to compute backprop (set .dw fields in mats)
+      cost.G.runBackprop()
+      // perform param update using gradients computed during backprop...
+      // this all seems kind of indirect...consider restructuring...
+      // looks like the purpose of dw is just to keep track of gradients temporarily
+      // maybe do this in a functional way
+      optimize({
+        model,
+        learningRate,
+        regc,
+        clipVal,
+        decayRate,
+        smoothEps,
+        stepCache,
+      })
+
+      if (currentIteration === numIterations) {
+        const argMaxPrediction = predictSentence({
           model,
           textModel,
           hiddenSizes,
-          sentence,
+          sample: false,
+          temperature,
+          maxCharsGen,
         })
-        // use built up graph to compute backprop (set .dw fields in mats)
-        cost.G.runBackprop()
-        // perform param update
-        solver.step(model, learningRate, regc, clipVal)
 
-        let result = {
-          iterations: totalIterations,
-          perplexity: calculateRunningAverage(prevResult.perplexity, cost.ppl),
-          cost: calculateRunningAverage(prevResult.cost, cost.cost),
-        }
-
-        if (currentIteration === iterations) {
-          const argMaxPrediction = predictSentence({
+        const samples = Array.from({ length: 3 }, () =>
+          predictSentence({
             model,
+            maxCharsGen,
             textModel,
             hiddenSizes,
-            maxCharsGen,
-            sample: false,
+            sample: true,
             temperature,
-          })
+          }),
+        )
 
-          const samples = repeat(
-            3,
-            samples => [
-              ...samples,
-              predictSentence({
-                model,
-                textModel,
-                hiddenSizes,
-                maxCharsGen,
-                sample: true,
-                temperature,
-              }),
-            ],
-            [],
-          )
-
-          result = {
-            ...result,
-            argMaxPrediction,
-            samples,
-          }
+        return {
+          iterations: totalIterations,
+          perplexity: cost.ppl,
+          cost: cost.cost,
+          argMaxPrediction,
+          samples,
         }
-
-        totalIterations += 1
-        return result
-      },
-      {},
-    )
-
-  const calculateRunningAverage = (lastAverage, newValue) => {
-    if (lastAverage === undefined) {
-      return newValue
-    } else {
-      return (lastAverage + newValue) / 2
-    }
-  }
+      }
+    })
 
   const toJSON = () =>
     JSON.stringify({
@@ -126,16 +113,14 @@ export function create({
       hiddenSizes,
       regc,
       clipVal,
-      maxCharsGen,
       totalIterations,
       models: {
         textModel,
         model: modelToJSON(model),
       },
-      solver: {
-        ...solver,
-        stepCache: modelToJSON(solver.stepCache),
-      },
+      smoothEps,
+      decayRate,
+      stepCache: modelToJSON(stepCache),
     })
 
   return {
@@ -146,7 +131,6 @@ export function create({
       textModel,
     },
     hiddenSizes,
-    maxCharsGen,
   }
 }
 
@@ -162,7 +146,7 @@ export function predictSentence({
   model,
   textModel,
   hiddenSizes,
-  maxCharsGen,
+  maxCharsGen = 100, // length of output
   sample = false,
   temperature = 1,
 }) {

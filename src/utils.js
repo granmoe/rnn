@@ -86,12 +86,12 @@ export function softmax(m) {
   return out
 }
 
-// TODO: Revisit this...initval, prev could maybe be cleaned up
-export const repeat = (count, func, initialValue) => {
-  let prevResult = initialValue
+export const repeat = (count, func) => {
   for (let i = 1; i <= count; i++) {
-    prevResult = func(prevResult, i)
+    if (i === count) {
+      return func(i) // return the result of the last call
+    } else {
+      func(i)
+    }
   }
-
-  return prevResult
 }

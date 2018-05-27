@@ -9,14 +9,12 @@ test('predictSentence output matches snapshot', () => {
   const {
     models: { model, textModel },
     hiddenSizes,
-    maxCharsGen,
   } = lstm
 
   const predictedSentence = predictSentence({
     model,
     textModel,
     hiddenSizes,
-    maxCharsGen,
     sample: false,
     temperature: 1,
   })

@@ -2,18 +2,18 @@
 
 ## Restructure
 
-* Review repeat() impl and usages
+* [IN PROGRESS] Update tests per change to to/fromJSON
 * [IN PROGRESS] Restructuring and improving Model
   * [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - whole obj needed for prev? if not, maybe lh.o.... = ... at end of costFunc does nothing and can be deleted? I think only h and c are needed
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
     * Notate side-effects
+      * forwardRNN/LSTM side-effects the passed in Graph, which is then used in Model to do backprop
 * review each module
   * Model
     * costFunc
-  * RNN
   * Solver
-    * Make solver a pure func, store stepCache somewhere else (where?)
-      * Cleanup model/solver toJSON after refactoring solver
+    * [IN PROGRESS] Cleanup model/solver toJSON after refactoring solver
+  * RNN
   * Utils
   * Mat (done)
   * Graph (done)
