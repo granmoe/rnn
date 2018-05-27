@@ -4,20 +4,6 @@ import { repeat, randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 import { matFromJSON } from './Mat'
 
-export function loadFromJSON(json) {
-  const args = JSON.parse(json)
-
-  return create({
-    ...args,
-    stepCache: modelFromJSON(args.stepCache),
-    models: {
-      model: modelFromJSON(args.models.model),
-      textModel: args.models.textModel,
-    },
-  })
-}
-
-// returns a function that will train the model
 export function create({
   // BASIC HYPER PARAMS
   type,
@@ -50,18 +36,18 @@ export function create({
   } = {}) =>
     repeat(numIterations, currentIteration => {
       totalIterations += 1
-      // TRAIN MODEL (DO FORWARD / BACKWARD PROP AND REGULARIZE AND CLIP GRADIENTS)
-      // get random sentence from data
-      const sentence = textModel.sentences[randi(0, textModel.sentences.length)]
-      // evaluate cost function on sentence
-      const cost = costFunc({
+
+      const randomSentence =
+        textModel.sentences[randi(0, textModel.sentences.length)]
+
+      const { graph, perplexity, cost } = computeCost({
         model,
         textModel,
         hiddenSizes,
-        sentence,
+        sentence: randomSentence,
       })
       // use built up graph to compute backprop (set .dw fields in mats)
-      cost.G.runBackprop()
+      graph.runBackprop()
       // perform param update using gradients computed during backprop...
       // this all seems kind of indirect...consider restructuring...
       // looks like the purpose of dw is just to keep track of gradients temporarily
@@ -89,18 +75,18 @@ export function create({
         const samples = Array.from({ length: 3 }, () =>
           predictSentence({
             model,
-            maxCharsGen,
             textModel,
             hiddenSizes,
             sample: true,
             temperature,
+            maxCharsGen,
           }),
         )
 
         return {
           iterations: totalIterations,
-          perplexity: cost.ppl,
-          cost: cost.cost,
+          perplexity,
+          cost,
           argMaxPrediction,
           samples,
         }
@@ -151,13 +137,13 @@ export function predictSentence({
   temperature = 1,
 }) {
   let lh, logprobs, probs
-  let G = new Graph({ doBackprop: false }) // Just predict (forward), don't do backprop
+  let graph = new Graph({ doBackprop: false }) // Just predict (forward), don't do backprop
   let sentence = ''
   let prev = {}
   let charIndex = 0
 
   do {
-    lh = forwardIndex(G, model, charIndex, prev, hiddenSizes)
+    lh = forwardIndex(graph, model, charIndex, prev, hiddenSizes)
     prev = lh
 
     logprobs = lh.o
@@ -180,12 +166,12 @@ export function predictSentence({
 }
 
 // TODO: side-effects model? maybe not
-export function costFunc({ model, textModel, hiddenSizes, sentence }) {
+export function computeCost({ model, textModel, hiddenSizes, sentence }) {
   // Takes a model and a sentence and calculates the loss.
   // Also returns the Graph object used to do backprop
   let lh, probs
   let n = sentence.length
-  let G = new Graph()
+  let graph = new Graph()
   let log2ppl = 0.0
   let cost = 0.0
   let prev = {}
@@ -195,7 +181,7 @@ export function costFunc({ model, textModel, hiddenSizes, sentence }) {
     let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
     let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
 
-    lh = forwardIndex(G, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model?
+    lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes) // TODO: Side-effects model?
 
     probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
 
@@ -208,8 +194,8 @@ export function costFunc({ model, textModel, hiddenSizes, sentence }) {
     prev = lh
   }
 
-  const ppl = Math.pow(2, log2ppl / (n - 1))
-  return { G, ppl, cost }
+  const perplexity = Math.pow(2, log2ppl / (n - 1))
+  return { graph, perplexity, cost }
 }
 
 // TODO: This name is kind of awkward
@@ -235,8 +221,7 @@ function createModels({
 
 function createTextModel(sentences, charCountThreshold = 1) {
   // go over all characters and keep track of all unique ones seen
-  const tokens = tokenize({ input: sentences, level: 'char' })
-  const charCounts = tokens.reduce((counts, char) => {
+  const charCounts = [...sentences.join('')].reduce((counts, char) => {
     counts[char] = counts[char] ? counts[char] + 1 : (counts[char] = 1)
     return counts
   }, {})
@@ -264,12 +249,17 @@ function createTextModel(sentences, charCountThreshold = 1) {
   }, initialVocabData)
 }
 
-const tokenize = ({ input, level = 'char' }) => {
-  if (level === 'char') {
-    return [...input.join('')]
-  } else if (level === 'word') {
-    return input.join(' ').split(/\b/)
-  }
+export function loadFromJSON(json) {
+  const args = JSON.parse(json)
+
+  return create({
+    ...args,
+    stepCache: modelFromJSON(args.stepCache),
+    models: {
+      model: modelFromJSON(args.models.model),
+      textModel: args.models.textModel,
+    },
+  })
 }
 
 const modelToJSON = model =>

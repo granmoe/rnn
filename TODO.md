@@ -2,6 +2,7 @@
 
 ## Restructure
 
+* Need to reorganize model...too big. Maybe split out everything not related to creating/loading/serializing...or split out to/from json into a separate file?
 * [IN PROGRESS] Update tests per change to to/fromJSON
 * [IN PROGRESS] Restructuring and improving Model
   * [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - whole obj needed for prev? if not, maybe lh.o.... = ... at end of costFunc does nothing and can be deleted? I think only h and c are needed
@@ -12,7 +13,6 @@
   * Model
     * costFunc
   * Solver
-    * [IN PROGRESS] Cleanup model/solver toJSON after refactoring solver
   * RNN
   * Utils
   * Mat (done)
