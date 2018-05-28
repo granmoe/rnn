@@ -10,10 +10,9 @@ export default ({
   smoothEps,
   decayRate,
 }) => {
-  // perform parameter update
-  let ratioClipped
-  let numClipped = 0
-  let numTot = 0
+  // let ratioClipped
+  // let numClipped = 0
+  // let numTot = 0
 
   for (const [matName, mat] of Object.entries(model)) {
     if (!(matName in stepCache)) {
@@ -30,10 +29,10 @@ export default ({
       // gradient clip
       if (Math.abs(mdwi) > clipVal) {
         mdwi = clipVal * Math.sign(mdwi)
-        numClipped++
+        // numClipped++
       }
 
-      numTot++
+      // numTot++
 
       // update (and regularize)
       mat.w[i] +=
@@ -42,7 +41,7 @@ export default ({
     }
   }
 
-  ratioClipped = numClipped * 1 / numTot
+  // ratioClipped = numClipped * 1 / numTot
 
-  return ratioClipped
+  // return ratioClipped
 }
