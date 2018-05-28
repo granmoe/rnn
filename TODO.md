@@ -3,15 +3,16 @@
 ## Inbox
 
 * Need to reorganize model...too big. Maybe split out everything not related to creating/loading/serializing...or split out to/from json into a separate file?
+* Maybe another data structure to represent a layer..and/or one to represent a DNN (could be called network, graph, whatever)
 
 ## Restructure
 
-* [IN PROGRESS] Update tests per change to to/fromJSON
 * [IN PROGRESS] Restructuring and improving Model
   * [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - whole obj needed for prev? if not, maybe lh.o.... = ... at end of costFunc does nothing and can be deleted? I think only h and c are needed
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
     * Notate side-effects
       * forwardRNN/LSTM side-effects the passed in Graph, which is then used in Model to do backprop
+      * optimize side-effects passed in stepCache...maybe just make immutable
 * review each module
   * Model
     * costFunc

@@ -1,4 +1,4 @@
-import { create, loadFromJSON, predictSentence, costFunc } from '../Model'
+import { create, loadFromJSON, predictSentence, computeCost } from '../Model'
 import { rnnJSON, input } from './model-test-data'
 
 // TODO: How to test with sample: true?
@@ -29,7 +29,7 @@ test('costFunc output matches snapshot', () => {
     hiddenSizes,
   } = lstm
 
-  const cost = costFunc({
+  const cost = computeCost({
     model,
     textModel,
     hiddenSizes,

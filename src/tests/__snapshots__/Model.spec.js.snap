@@ -2,7 +2,8 @@
 
 exports[`costFunc output matches snapshot 1`] = `
 Object {
-  "G": Graph {
+  "cost": 53.44277632796922,
+  "graph": Graph {
     "backpropFuncs": Array [
       [Function],
       [Function],
@@ -1279,8 +1280,7 @@ Object {
     ],
     "doBackprop": true,
   },
-  "cost": 53.44277632796922,
-  "ppl": 11.349992757446673,
+  "perplexity": 11.349992757446673,
 }
 `;
 

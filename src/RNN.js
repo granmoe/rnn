@@ -2,7 +2,6 @@ import Mat, { RandMat } from './Mat'
 
 // Prob start analysis of this module with RNN since it's simpler
 // split RNN and LSTM into separate files?
-// create Model class that ties everything together (and generalizes the stuff in recurrent/pages/index)
 
 export function initLSTM(inputSize, hiddenSizes, outputSize) {
   return hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
@@ -29,7 +28,7 @@ export function initLSTM(inputSize, hiddenSizes, outputSize) {
     model['bd'] = new Mat(outputSize, 1)
 
     // letter embedding vectors
-    model['Wil'] = new RandMat(outputSize, inputSize, 0, 0.08)
+    model['Wil'] = new RandMat(outputSize, inputSize, 0.08)
 
     return model
   }, {})
