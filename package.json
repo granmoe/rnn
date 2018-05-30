@@ -51,5 +51,7 @@
     "url": "https://github.com/granmoe/rnn/issues"
   },
   "homepage": "https://github.com/granmoe/rnn#readme",
-  "dependencies": {}
+  "dependencies": {
+    "babel-polyfill": "^6.26.0"
+  }
 }

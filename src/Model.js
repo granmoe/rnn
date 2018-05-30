@@ -1,6 +1,13 @@
 import optimize from './optimize'
 import Graph from './Graph'
-import { repeat, randi, softmax, maxi, samplei } from './utils'
+import {
+  repeat,
+  slidingWindowTwo,
+  randi,
+  softmax,
+  maxi,
+  samplei,
+} from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 import { matFromJSON } from './Mat'
 
@@ -14,10 +21,11 @@ export function create({
   // OPTIMIZATION HYPER PARAMS
   regc = 0.000001, // L2 regularization strength
   clipVal = 5, // clip gradients at this value
-  totalIterations = 0,
-  stepCache = {},
   decayRate = 0.999,
   smoothEps = 1e-8,
+  // these are only passed in when restarting a saved model
+  stepCache = {},
+  totalIterations = 0,
   models = createModels({
     type,
     input,
@@ -121,7 +129,7 @@ export function create({
 }
 
 function forwardIndex(G, model, ix, prev, hiddenSizes) {
-  const x = G.rowPluck(model['Wil'], ix)
+  const x = G.rowPluck(model['Wil'], ix) // char embedding for given char
   // forward prop the sequence learner
   return hiddenSizes.type === 'rnn'
     ? forwardRNN(G, model, x, prev, hiddenSizes)
@@ -159,41 +167,38 @@ export function predictSentence({
     charIndex = sample ? samplei(probs.w) : maxi(probs.w)
 
     if (charIndex !== 0) sentence += textModel.indexToLetter[charIndex]
-    // 0 index is END token, maxCharsGen is a way to limit the max length of predictions
+    // 0 index is END token (or is it the beginning of a new sentence?), maxCharsGen is a way to limit the max length of predictions
   } while (charIndex !== 0 && sentence.length <= maxCharsGen)
 
   return sentence
 }
 
+// calculates loss of model on a given sentence and returns graph to be used for backprop
 export function computeCost({ model, textModel, hiddenSizes, sentence }) {
-  // Takes a model and a sentence and calculates the loss.
-  // Also returns the Graph object used to do backprop
-  let lh, probs
-  let n = sentence.length
-  let graph = new Graph()
+  const graph = new Graph()
   let log2ppl = 0
   let cost = 0
   let prev = {}
+  // prettier-ignore
+  const sentenceIndices = sentence.split('').map(c => textModel.letterToIndex[c])
+  // start and end tokens are zeros
+  let delimitedSentence = [0, ...sentenceIndices, 0]
 
-  for (let i = -1; i < n; i++) {
-    // start and end tokens are zeros
-    let ixSource = i === -1 ? 0 : textModel.letterToIndex[sentence[i]] // first step: start with START token
-    let ixTarget = i === n - 1 ? 0 : textModel.letterToIndex[sentence[i + 1]] // last step: end with END token
+  // SOURCE is starting character, TARGET is next character (what we hope to predict)
+  for (let [ixSource, ixTarget] of slidingWindowTwo(delimitedSentence)) {
+    const lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes) // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
+    const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
 
-    lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes)
-
-    probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
-
-    log2ppl += -Math.log2(probs.w[ixTarget]) // accumulate base 2 log prob and do smoothing
+    log2ppl += -Math.log2(probs.w[ixTarget]) // accumulate binary log prob and do smoothing
     cost += -Math.log(probs.w[ixTarget])
 
-    // write gradients into log probabilities (this might not do anything)
+    // write gradients into log probabilities
     lh.o.dw = probs.w
     lh.o.dw[ixTarget] -= 1
     prev = lh
   }
 
-  const perplexity = Math.pow(2, log2ppl / (n - 1))
+  const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
   return { graph, perplexity, cost }
 }
 

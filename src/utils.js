@@ -66,14 +66,15 @@ export function samplei(w) {
 }
 
 export function softmax(m) {
-  let out = new Mat(m.rows, m.cols) // probability volume
+  const out = new Mat(m.rows, m.cols) // probability volume
 
-  let maxval = -999999
-  m.w.forEach(w => {
+  const [firstW, ...remainingW] = m.w
+  let maxval = firstW
+  remainingW.forEach(w => {
     if (w > maxval) maxval = w
   })
 
-  let s = 0.0
+  let s = 0
   for (let i = 0; i < m.w.length; i++) {
     out.w[i] = Math.exp(m.w[i] - maxval)
     s += out.w[i]
@@ -93,5 +94,11 @@ export const repeat = (count, func) => {
     } else {
       func(i)
     }
+  }
+}
+
+export function* slidingWindowTwo(arr) {
+  for (let i = 0; i < arr.length - 1; i++) {
+    yield [arr[i], arr[i + 1]]
   }
 }

@@ -3,17 +3,20 @@ import Mat, { RandMat } from './Mat'
 // Prob start analysis of this module with RNN since it's simpler
 // split RNN and LSTM into separate files?
 
+// inputSize = letterSize, outputSize = num unique chars
 export function initLSTM(inputSize, hiddenSizes, outputSize) {
   return hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
-    // gates parameters
+    // input gate
     model['Wix' + index] = new RandMat(hiddenSize, prevSize, 0.08)
     model['Wih' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
     model['bi' + index] = new Mat(hiddenSize, 1)
+    // forget gate
     model['Wfx' + index] = new RandMat(hiddenSize, prevSize, 0.08)
     model['Wfh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
     model['bf' + index] = new Mat(hiddenSize, 1)
+    // output gate
     model['Wox' + index] = new RandMat(hiddenSize, prevSize, 0.08)
     model['Woh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
     model['bo' + index] = new Mat(hiddenSize, 1)
