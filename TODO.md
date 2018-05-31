@@ -1,5 +1,8 @@
 # TODO
 
+experiment with ridiculously large hidden sizes and letter sizes
+does it make sense for hidden size to be bigger than letter size?
+
 ## Inbox
 
 * Next: focus on computeCost and all related code

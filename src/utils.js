@@ -97,8 +97,8 @@ export const repeat = (count, func) => {
   }
 }
 
-export function* slidingWindowTwo(arr) {
-  for (let i = 0; i < arr.length - 1; i++) {
-    yield [arr[i], arr[i + 1]]
+export function* slidingWindow(windowSize, arr) {
+  for (let i = 0; i < arr.length - (windowSize - 1); i++) {
+    yield arr.slice(i, i + windowSize)
   }
 }

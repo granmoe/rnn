@@ -1,13 +1,6 @@
 import optimize from './optimize'
 import Graph from './Graph'
-import {
-  repeat,
-  slidingWindowTwo,
-  randi,
-  softmax,
-  maxi,
-  samplei,
-} from './utils'
+import { repeat, slidingWindow, randi, softmax, maxi, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 import { matFromJSON } from './Mat'
 
@@ -185,7 +178,8 @@ export function computeCost({ model, textModel, hiddenSizes, sentence }) {
   let delimitedSentence = [0, ...sentenceIndices, 0]
 
   // SOURCE is starting character, TARGET is next character (what we hope to predict)
-  for (let [ixSource, ixTarget] of slidingWindowTwo(delimitedSentence)) {
+  // TODO: Rename ixSource/Target to sourceIndex, targetIndex
+  for (let [ixSource, ixTarget] of slidingWindow(2, delimitedSentence)) {
     const lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes) // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
     const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
 
