@@ -38,11 +38,11 @@ export function create({
     repeat(numIterations, currentIteration => {
       totalIterations += 1
 
-      const randomSentence =
-        textModel.sentences[randi(0, textModel.sentences.length)]
+      const randomSentence = textModel.sentences[randi(0, textModel.sentences.length)]
 
       const { graph, perplexity, cost } = computeCost({
         model,
+        type,
         textModel,
         hiddenSizes,
         sentence: randomSentence,
@@ -65,6 +65,7 @@ export function create({
 
       if (currentIteration === numIterations) {
         const argMaxPrediction = predictSentence({
+          type,
           model,
           textModel,
           hiddenSizes,
@@ -75,6 +76,7 @@ export function create({
 
         const samples = Array.from({ length: 3 }, () =>
           predictSentence({
+            type,
             model,
             textModel,
             hiddenSizes,
@@ -121,15 +123,17 @@ export function create({
   }
 }
 
-function forwardIndex(G, model, ix, prev, hiddenSizes) {
+function forwardIndex(G, model, ix, prev, hiddenSizes, type) {
+  // Could this somehow be how prev.o.dw is having an effect?
   const x = G.rowPluck(model['Wil'], ix) // char embedding for given char
   // forward prop the sequence learner
-  return hiddenSizes.type === 'rnn'
+  return type === 'rnn'
     ? forwardRNN(G, model, x, prev, hiddenSizes)
     : forwardLSTM(G, model, x, prev, hiddenSizes)
 }
 
 export function predictSentence({
+  type,
   model,
   textModel,
   hiddenSizes,
@@ -144,7 +148,7 @@ export function predictSentence({
   let charIndex = 0
 
   do {
-    lh = forwardIndex(graph, model, charIndex, prev, hiddenSizes)
+    lh = forwardIndex(graph, model, charIndex, prev, hiddenSizes, type)
     prev = lh
 
     logprobs = lh.o
@@ -167,29 +171,25 @@ export function predictSentence({
 }
 
 // calculates loss of model on a given sentence and returns graph to be used for backprop
-export function computeCost({ model, textModel, hiddenSizes, sentence }) {
+export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
   const graph = new Graph()
   let log2ppl = 0
   let cost = 0
-  let prev = {}
-  // prettier-ignore
-  const sentenceIndices = sentence.split('').map(c => textModel.letterToIndex[c])
-  // start and end tokens are zeros
-  let delimitedSentence = [0, ...sentenceIndices, 0]
+  let lh = {}
+  const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
+  let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
 
-  // SOURCE is starting character, TARGET is next character (what we hope to predict)
-  // TODO: Rename ixSource/Target to sourceIndex, targetIndex
-  for (let [ixSource, ixTarget] of slidingWindow(2, delimitedSentence)) {
-    const lh = forwardIndex(graph, model, ixSource, prev, hiddenSizes) // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
+  for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
+    // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
+    lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
     const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
 
-    log2ppl += -Math.log2(probs.w[ixTarget]) // accumulate binary log prob and do smoothing
-    cost += -Math.log(probs.w[ixTarget])
+    log2ppl += -Math.log2(probs.w[nextCharIndex]) // accumulate binary log prob and do smoothing
+    cost += -Math.log(probs.w[nextCharIndex])
 
     // write gradients into log probabilities
     lh.o.dw = probs.w
-    lh.o.dw[ixTarget] -= 1
-    prev = lh
+    lh.o.dw[nextCharIndex] -= 1
   }
 
   const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
@@ -197,13 +197,7 @@ export function computeCost({ model, textModel, hiddenSizes, sentence }) {
 }
 
 // TODO: This name is kind of awkward
-function createModels({
-  type,
-  hiddenSizes,
-  letterSize,
-  input,
-  charCountThreshold,
-}) {
+function createModels({ type, hiddenSizes, letterSize, input, charCountThreshold }) {
   const sentences = input.split('\n').map(str => str.trim())
   const textModel = createTextModel(sentences, charCountThreshold)
 

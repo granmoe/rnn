@@ -21,7 +21,9 @@ does it make sense for hidden size to be bigger than letter size?
       * optimize side-effects passed in stepCache...maybe just make immutable
 * review each module
   * Model
-    * costFunc
+    * computeCost
+      * understand math
+      * understand how lh.o.dw is having any effect
   * Solver
   * RNN
   * Utils

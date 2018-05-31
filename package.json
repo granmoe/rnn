@@ -13,7 +13,8 @@
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all",
-    "semi": false
+    "semi": false,
+    "printWidth": 90
   },
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.46",
