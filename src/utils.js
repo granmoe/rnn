@@ -5,10 +5,7 @@ export const updateMats = func => (...mats) => {
   // I wonder if this whole loop and inner loop and everything could be one reduce?
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
   for (let i = 0; i < mats[0].w.length; i++) {
-    const weights = mats.reduce(
-      (weights, mat) => [...weights, mat.w[i], mat.dw[i]],
-      [],
-    )
+    const weights = mats.reduce((weights, mat) => [...weights, mat.w[i], mat.dw[i]], [])
 
     const results = func(...weights)
 
@@ -100,5 +97,12 @@ export const repeat = (count, func) => {
 export function* slidingWindow(windowSize, arr) {
   for (let i = 0; i < arr.length - (windowSize - 1); i++) {
     yield arr.slice(i, i + windowSize)
+  }
+}
+
+export function* bidirectionalSlidingWindow(windowSize, arr) {
+  const reversedArr = [...arr].reverse()
+  for (let i = 0; i < arr.length - (windowSize - 1); i++) {
+    yield [...arr.slice(i, i + windowSize), ...reversedArr.slice(i, i + windowSize)]
   }
 }

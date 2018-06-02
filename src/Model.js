@@ -1,6 +1,14 @@
 import optimize from './optimize'
 import Graph from './Graph'
-import { repeat, slidingWindow, randi, softmax, maxi, samplei } from './utils'
+import {
+  repeat,
+  bidirectionalSlidingWindow,
+  slidingWindow,
+  randi,
+  softmax,
+  maxi,
+  samplei,
+} from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 import { matFromJSON } from './Mat'
 
@@ -40,7 +48,7 @@ export function create({
 
       const randomSentence = textModel.sentences[randi(0, textModel.sentences.length)]
 
-      const { graph, perplexity, cost } = computeCost({
+      const { graph, graphR, perplexity, cost } = computeCost({
         model,
         type,
         textModel,
@@ -49,6 +57,7 @@ export function create({
       })
       // use built up graph to compute backprop (set .dw fields in mats)
       graph.runBackprop()
+      graphR.runBackprop()
       // perform param update using gradients computed during backprop...
       // this all seems kind of indirect...consider restructuring...
       // looks like the purpose of dw is just to keep track of gradients temporarily
@@ -172,28 +181,41 @@ export function predictSentence({
 
 // calculates loss of model on a given sentence and returns graph to be used for backprop
 export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
+  // TODO: Need to do something different with graph and model in lhR forwardIndex
+  // perhaps need separate graph and model?
   const graph = new Graph()
+  const graphR = new Graph()
   let log2ppl = 0
   let cost = 0
   let lh = {}
+  let lhR = {}
   const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
   let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
 
-  for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
+  for (let [currIx, nextIx, currReverseIx, nextReverseIx] of bidirectionalSlidingWindow(
+    2,
+    delimitedSentence,
+  )) {
+    // for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
     // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
-    lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
+    lh = forwardIndex(graph, model, currIx, lh, hiddenSizes, type)
+    lhR = forwardIndex(graphR, model, currReverseIx, lhR, hiddenSizes, type)
     const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
+    const probsR = softmax(lhR.o) // same for reversed
 
-    log2ppl += -Math.log2(probs.w[nextCharIndex]) // accumulate binary log prob and do smoothing
-    cost += -Math.log(probs.w[nextCharIndex])
+    // accumulate binary log prob and do smoothing
+    log2ppl += -((Math.log2(probs.w[nextIx]) + Math.log2(probsR.w[nextReverseIx])) / 2)
+    cost += -((Math.log(probs.w[nextIx]) + Math.log(probsR.w[nextReverseIx])) / 2)
 
     // write gradients into log probabilities
     lh.o.dw = probs.w
-    lh.o.dw[nextCharIndex] -= 1
+    lh.o.dw[nextIx] -= 1
+    lhR.o.dw = probsR.w
+    lhR.o.dw[nextReverseIx] -= 1
   }
 
   const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
-  return { graph, perplexity, cost }
+  return { graph, graphR, perplexity, cost }
 }
 
 // TODO: This name is kind of awkward
