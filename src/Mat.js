@@ -1,4 +1,4 @@
-import { assert, randf } from './utils'
+import { assert, randFloat } from './utils'
 
 // TODO: Change rows/cols to rowCount, colCount or numRows, numCols
 // TODO: Consider renaming w to weights and dw to gradients
@@ -73,6 +73,6 @@ export const matFromJSON = ({ rows, cols, weights }) => {
 
 // return Mat but filled with random numbers from gaussian
 export const RandMat = (rows, cols, std) =>
-  new Mat(rows, cols).updateW(_ => randf(-std, std)) // kind of :P
+  new Mat(rows, cols).updateW(_ => randFloat(-std, std)) // kind of :P
 
 const zeros = count => new Float64Array(count)

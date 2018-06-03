@@ -5,10 +5,7 @@ export const updateMats = func => (...mats) => {
   // I wonder if this whole loop and inner loop and everything could be one reduce?
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
   for (let i = 0; i < mats[0].w.length; i++) {
-    const weights = mats.reduce(
-      (weights, mat) => [...weights, mat.w[i], mat.dw[i]],
-      [],
-    )
+    const weights = mats.reduce((weights, mat) => [...weights, mat.w[i], mat.dw[i]], [])
 
     const results = func(...weights)
 
@@ -32,17 +29,16 @@ export function assert(condition, message = 'Assertion failed') {
   }
 }
 
-export const randf = (a, b) => Math.random() * (b - a) + a
+export const randFloat = (a, b) => Math.random() * (b - a) + a
 
-export const randi = (a, b) => Math.floor(Math.random() * (b - a) + a)
+export const randInt = (a, b) => Math.floor(randFloat(a, b))
 
-// TODO: Variable names here suck
 // I think the original code was only iterating through the second-to-last item
 // in order to make predictSentence work (to account for end token)
 // Maybe this func should be simplified to just return max ix of array
 // And caller should be responsible for passing in the array that
 // Already excludes the last item
-export const maxi = weights =>
+export const maxIndex = weights =>
   weights
     .slice(0, weights.length - 1)
     .reduce(
@@ -51,9 +47,10 @@ export const maxi = weights =>
       0,
     )
 
+// sample argmax from w, assuming w are probabilities that sum to one
 export function samplei(w) {
-  // sample argmax from w, assuming w are probabilities that sum to one
-  let r = randf(0, 1) // max value up to, but not including, 1
+  // TODO: Variable names here suck
+  const r = randFloat(0, 1) // max value up to, but not including, 1
   let x = 0
   let i = 0
 
@@ -87,8 +84,19 @@ export function softmax(m) {
   return out
 }
 
+export function* range(maxOrStart, max) {
+  const range = Array.from(
+    { length: max === undefined ? maxOrStart : max },
+    (_, key) => (max === undefined ? key : key + maxOrStart),
+  )
+
+  for (const num of range) {
+    yield num
+  }
+}
+
 export const repeat = (count, func) => {
-  for (let i = 1; i <= count; i++) {
+  for (const i of range(1, count)) {
     if (i === count) {
       return func(i) // return the result of the last call
     } else {
@@ -98,7 +106,7 @@ export const repeat = (count, func) => {
 }
 
 export function* slidingWindow(windowSize, arr) {
-  for (let i = 0; i < arr.length - (windowSize - 1); i++) {
+  for (const i of range(arr.length - (windowSize - 1))) {
     yield arr.slice(i, i + windowSize)
   }
 }

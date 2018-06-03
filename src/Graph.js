@@ -2,21 +2,15 @@ import { assert, updateMats } from './utils'
 import Mat from './Mat'
 
 // Does matrix ops, keeps track of backprop and performs backprop
-
-// Transformer definitions
 export default class Graph {
   constructor({ doBackprop = true } = {}) {
     this.doBackprop = doBackprop
-
-    // this will store a list of functions that perform backprop,
-    // in their forward pass order. So in backprop we will go
-    // backwards through this array and invoke each one
-    this.backpropFuncs = []
+    this.backpropFuncs = [] // will be stored in reverse order of forward prop
   }
 
   runBackprop() {
-    for (let i = this.backpropFuncs.length - 1; i >= 0; i--) {
-      this.backpropFuncs[i]() // tick! <- What does this mean?
+    for (const backpropFunc of this.backpropFuncs) {
+      backpropFunc() // tick! <- What does this mean?
     }
   }
 
@@ -35,7 +29,7 @@ export default class Graph {
     out.updateW((w, i) => m.w[cols * ix + i])
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(backward)
+      this.backpropFuncs.unshift(backward)
     }
     return out
   }
@@ -44,7 +38,7 @@ export default class Graph {
     const out = m.clone().updateW(Math.tanh) // tanh nonlinearity
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(() => {
+      this.backpropFuncs.unshift(() => {
         m.updateDw((dw, i) => dw + (1 - out.w[i] * out.w[i]) * out.dw[i])
       })
     }
@@ -53,10 +47,10 @@ export default class Graph {
   }
 
   sigmoid(m) {
-    const out = m.clone().updateW(sig) // sigmoid nonlinearity
+    const out = m.clone().updateW(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(() => {
+      this.backpropFuncs.unshift(() => {
         // grad for z = tanh(x) is (1 - z^2)
         m.updateDw((dw, i) => dw + out.w[i] * (1 - out.w[i]) * out.dw[i])
       })
@@ -69,7 +63,7 @@ export default class Graph {
     const out = m.clone().updateW(Math.max.bind(null, 0)) // sigmoid nonlinearity
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(() => {
+      this.backpropFuncs.unshift(() => {
         m.updateDw((dw, i) => (dw + m.w[i] > 0 ? out.dw[i] : 0))
       })
     }
@@ -93,7 +87,7 @@ export default class Graph {
     })
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(() => {
+      this.backpropFuncs.unshift(() => {
         out.dw.map((b, i) => {
           const { row, col } = out.indexToCoord(i)
 
@@ -117,7 +111,7 @@ export default class Graph {
     const out = m1.clone().updateW((w, index) => m1.w[index] + m2.w[index])
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(() => {
+      this.backpropFuncs.unshift(() => {
         updateMats((m1w, m1dw, m2w, m2dw, outw, outdw) => {
           return [m1w, m1dw + outdw, m2w, m2dw + outdw]
         })(m1, m2, out)
@@ -133,7 +127,7 @@ export default class Graph {
     let out = m1.clone().updateW((w, i) => w * m2.w[i])
 
     if (this.doBackprop) {
-      this.backpropFuncs.push(() => {
+      this.backpropFuncs.unshift(() => {
         updateMats((m1w, m1dw, m2w, m2dw, outw, outdw) => {
           return [m1w, m2w * outdw, m2w, m1w * outdw]
         })(m1, m2, out)
@@ -143,5 +137,3 @@ export default class Graph {
     return out
   }
 }
-
-const sig = x => 1.0 / (1 + Math.exp(-x))

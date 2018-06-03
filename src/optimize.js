@@ -1,6 +1,7 @@
 import Mat from './Mat'
 
 // updates weights, then resets gradients to 0; uses gradient clipping
+// side-effects model
 export default ({
   model,
   learningRate,
@@ -10,10 +11,6 @@ export default ({
   smoothEps,
   decayRate,
 }) => {
-  // let ratioClipped
-  // let numClipped = 0
-  // let numTot = 0
-
   for (const [matName, mat] of Object.entries(model)) {
     if (!(matName in stepCache)) {
       stepCache[matName] = new Mat(mat.rows, mat.cols)
@@ -29,19 +26,11 @@ export default ({
       // gradient clip
       if (Math.abs(mdwi) > clipVal) {
         mdwi = clipVal * Math.sign(mdwi)
-        // numClipped++
       }
 
-      // numTot++
-
       // update (and regularize)
-      mat.w[i] +=
-        -learningRate * mdwi / Math.sqrt(s.w[i] + smoothEps) - regc * mat.w[i]
+      mat.w[i] += -learningRate * mdwi / Math.sqrt(s.w[i] + smoothEps) - regc * mat.w[i]
       mat.dw[i] = 0 // reset gradients for next iteration
     }
   }
-
-  // ratioClipped = numClipped * 1 / numTot
-
-  // return ratioClipped
 }

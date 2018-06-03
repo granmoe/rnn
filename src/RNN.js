@@ -63,30 +63,22 @@ export function forwardLSTM(graph, model, x, prev, hiddenSizes) {
       // input gate
       let h0 = graph.mul(model['Wix' + index], inputVector)
       let h1 = graph.mul(model['Wih' + index], hiddenPrev)
-      let inputGate = graph.sigmoid(
-        graph.add(graph.add(h0, h1), model['bi' + index]),
-      )
+      let inputGate = graph.sigmoid(graph.add(graph.add(h0, h1), model['bi' + index]))
 
       // forget gate
       let h2 = graph.mul(model['Wfx' + index], inputVector)
       let h3 = graph.mul(model['Wfh' + index], hiddenPrev)
-      let forgetGate = graph.sigmoid(
-        graph.add(graph.add(h2, h3), model['bf' + index]),
-      )
+      let forgetGate = graph.sigmoid(graph.add(graph.add(h2, h3), model['bf' + index]))
 
       // output gate
       let h4 = graph.mul(model['Wox' + index], inputVector)
       let h5 = graph.mul(model['Woh' + index], hiddenPrev)
-      let outputGate = graph.sigmoid(
-        graph.add(graph.add(h4, h5), model['bo' + index]),
-      )
+      let outputGate = graph.sigmoid(graph.add(graph.add(h4, h5), model['bo' + index]))
 
       // write operation on cells
       let h6 = graph.mul(model['Wcx' + index], inputVector)
       let h7 = graph.mul(model['Wch' + index], hiddenPrev)
-      let cellWrite = graph.tanh(
-        graph.add(graph.add(h6, h7), model['bc' + index]),
-      )
+      let cellWrite = graph.tanh(graph.add(graph.add(h6, h7), model['bc' + index]))
 
       // compute new cell activation
       let retainCell = graph.eltmul(forgetGate, cellPrev) // what do we keep from cell
@@ -105,10 +97,7 @@ export function forwardLSTM(graph, model, x, prev, hiddenSizes) {
   )
 
   // one decoder to outputs at end
-  let output = graph.add(
-    graph.mul(model['Whd'], hidden[hidden.length - 1]),
-    model['bd'],
-  )
+  let output = graph.add(graph.mul(model['Whd'], hidden[hidden.length - 1]), model['bd'])
 
   // return cell memory, hidden representation and output
   return { h: hidden, c: cell, o: output }
@@ -124,11 +113,7 @@ export function initRNN(inputSize, hiddenSizes, outputSize) {
   }, {})
 
   // decoder params
-  model['Whd'] = new RandMat(
-    outputSize,
-    hiddenSizes[hiddenSizes.length - 1],
-    0.08,
-  )
+  model['Whd'] = new RandMat(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
   model['bd'] = new Mat(outputSize, 1)
 
   // letter embedding vectors

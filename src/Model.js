@@ -1,6 +1,6 @@
 import optimize from './optimize'
 import Graph from './Graph'
-import { repeat, slidingWindow, randi, softmax, maxi, samplei } from './utils'
+import { repeat, slidingWindow, randInt, softmax, maxIndex, samplei } from './utils'
 import { initRNN, initLSTM, forwardRNN, forwardLSTM } from './RNN'
 import { matFromJSON } from './Mat'
 
@@ -38,7 +38,7 @@ export function create({
     repeat(numIterations, currentIteration => {
       totalIterations += 1
 
-      const randomSentence = textModel.sentences[randi(0, textModel.sentences.length)]
+      const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
 
       const { graph, perplexity, cost } = computeCost({
         model,
@@ -161,7 +161,7 @@ export function predictSentence({
     }
     probs = softmax(logprobs)
 
-    charIndex = sample ? samplei(probs.w) : maxi(probs.w)
+    charIndex = sample ? samplei(probs.w) : maxIndex(probs.w)
 
     if (charIndex !== 0) sentence += textModel.indexToLetter[charIndex]
     // 0 index is END token (or is it the beginning of a new sentence?), maxCharsGen is a way to limit the max length of predictions
