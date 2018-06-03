@@ -5,8 +5,9 @@ import Mat from './Mat'
 
 // Transformer definitions
 export default class Graph {
-  constructor({ doBackprop = true } = {}) {
+  constructor({ doBackprop = true, reverse = false } = {}) {
     this.doBackprop = doBackprop
+    this.reverse = reverse
 
     // this will store a list of functions that perform backprop,
     // in their forward pass order. So in backprop we will go
@@ -15,8 +16,10 @@ export default class Graph {
   }
 
   runBackprop() {
-    for (let i = this.backpropFuncs.length - 1; i >= 0; i--) {
-      this.backpropFuncs[i]() // tick! <- What does this mean?
+    // normally, run through funcs backwards, if reverse, go forwards
+    if (!this.reverse) this.backpropFuncs.reverse()
+    for (const backpropFunc of this.backpropFuncs) {
+      backpropFunc()
     }
   }
 

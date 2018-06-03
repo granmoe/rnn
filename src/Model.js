@@ -184,7 +184,7 @@ export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
   // TODO: Need to do something different with graph and model in lhR forwardIndex
   // perhaps need separate graph and model?
   const graph = new Graph()
-  const graphR = new Graph()
+  const graphR = new Graph({ reverse: true })
   let log2ppl = 0
   let cost = 0
   let lh = {}
