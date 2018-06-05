@@ -1,4 +1,5 @@
-import { create, loadFromJSON, predictSentence, computeCost } from '../Model'
+import { create, loadFromJSON } from '../Model'
+import { predictSentence, computeCost } from '../forward'
 import { rnnJSON, input } from './model-test-data'
 
 // TODO: How to test with sample: true?

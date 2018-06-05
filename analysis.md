@@ -25,9 +25,18 @@ new Mat(rows, cols) // for softmax
 
 Does forward/backward prop matrix ops
 Tracks what forward ops have been done, exposes a function to run the corresponding backprop based on this
-Imported only by RNN
 
-# Solver
+# optimizer
 
 Does actual updating of weights/params
-Only imported externally (check which other things are import externally)
+
+init lstm/rnn
+
+Graph
+
+Mat
+
+forward.js
+computeCost
+predictSentence
+forwardIndex
