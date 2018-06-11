@@ -36,7 +36,27 @@ Graph
 
 Mat
 
-forward.js
+forward.js:
+
 computeCost
 predictSentence
 forwardIndex
+
+Should forwardLSTM and forwardRNN go in forward.js, too? Prob since that's the only place they're imported
+
+=============
+
+* create
+* load
+* serialize
+
+* train
+
+  * forward
+  * backward
+  * optimize?
+
+* Mat
+* Graph is the odd man out
+
+Create graph of imports (use webpack analyzer) and reorganize code accordingly
