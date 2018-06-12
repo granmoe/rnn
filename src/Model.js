@@ -1,6 +1,6 @@
 import optimize from './optimize'
 import { computeCost, predictSentence } from './forward'
-import { repeat, randInt } from './utils'
+import { randInt, range } from './utils'
 import { initRNN, initLSTM } from './RNN'
 import { matFromJSON } from './Mat'
 
@@ -34,8 +34,8 @@ export function create({
     temperature = 1, // how peaky model predictions should be
     learningRate = 0.01,
     maxCharsGen,
-  } = {}) =>
-    repeat(numIterations, currentIteration => {
+  } = {}) => {
+    for (const currentIteration of range(1, numIterations)) {
       totalIterations += 1
 
       const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
@@ -94,7 +94,8 @@ export function create({
           samples,
         }
       }
-    })
+    }
+  }
 
   const toJSON = () =>
     JSON.stringify({

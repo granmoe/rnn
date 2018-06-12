@@ -95,16 +95,6 @@ export function* range(maxOrStart, max) {
   }
 }
 
-export const repeat = (count, func) => {
-  for (const i of range(1, count)) {
-    if (i === count) {
-      return func(i) // return the result of the last call
-    } else {
-      func(i)
-    }
-  }
-}
-
 export function* slidingWindow(windowSize, arr) {
   for (const i of range(arr.length - (windowSize - 1))) {
     yield arr.slice(i, i + windowSize)
