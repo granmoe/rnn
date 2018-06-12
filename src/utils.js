@@ -4,7 +4,7 @@ export const updateMats = func => (...mats) => {
   // TODO (someday): Assert that all mats have same length
   // I wonder if this whole loop and inner loop and everything could be one reduce?
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
-  for (let i = 0; i < mats[0].w.length; i++) {
+  for (const i of range(mats[0].w.length)) {
     const weights = mats.reduce((weights, mat) => [...weights, mat.w[i], mat.dw[i]], [])
 
     const results = func(...weights)
@@ -72,7 +72,7 @@ export function softmax(m) {
   })
 
   let s = 0
-  for (let i = 0; i < m.w.length; i++) {
+  for (const i of range(m.w.length)) {
     out.w[i] = Math.exp(m.w[i] - maxval)
     s += out.w[i]
   }

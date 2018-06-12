@@ -1,4 +1,5 @@
 import Mat from './Mat'
+import { range } from './utils'
 
 // updates weights, then resets gradients to 0; uses gradient clipping
 // side-effects model
@@ -18,7 +19,7 @@ export default ({
 
     let s = stepCache[matName]
 
-    for (let i = 0; i < mat.w.length; i++) {
+    for (const i of range(mat.w.length)) {
       // rmsprop adaptive learning rate
       let mdwi = mat.dw[i]
       s.w[i] = s.w[i] * decayRate + (1.0 - decayRate) * mdwi * mdwi

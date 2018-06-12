@@ -1,4 +1,4 @@
-import { assert, updateMats } from './utils'
+import { assert, range, updateMats } from './utils'
 import Mat from './Mat'
 
 // Does matrix ops, keeps track of backprop and performs backprop
@@ -16,7 +16,7 @@ export default class Graph {
 
   rowPluck(m, ix) {
     function backward() {
-      for (let i = 0; i < cols; i++) {
+      for (const i of range(cols)) {
         m.dw[cols * ix + i] += out.dw[i]
       }
     }
@@ -79,7 +79,7 @@ export default class Graph {
       const { row, col } = mat.indexToCoord(i)
 
       let dot = 0
-      for (let n = 0; n < m1.cols; n++) {
+      for (const n of range(m1.cols)) {
         dot += m1.w[n + row * m1.cols] * m2.w[n * m2.cols + col]
       }
 
@@ -91,7 +91,7 @@ export default class Graph {
         out.dw.map((b, i) => {
           const { row, col } = out.indexToCoord(i)
 
-          for (let n = 0; n < m1.cols; n++) {
+          for (const n of range(m1.cols)) {
             const m1i = n + row * m1.cols
             const m2i = n * m2.cols + col
 

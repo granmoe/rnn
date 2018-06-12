@@ -5,7 +5,6 @@ does it make sense for hidden size to be bigger than letter size?
 
 ## Inbox
 
-* [IN PROGRESS] replace all for(;;) loops with for...of range
 * Next: focus on computeCost and all related code
 * Need to reorganize model...too big. Maybe split out everything not related to creating/loading/serializing...or split out to/from json into a separate file?
 * Maybe another data structure to represent a layer..and/or one to represent a DNN (could be called network, graph, whatever)
