@@ -1,22 +1,18 @@
 # TODO
 
-experiment with ridiculously large hidden sizes and letter sizes
-does it make sense for hidden size to be bigger than letter size?
-
 ## Inbox
 
-* [IN PROGRESS] understand computeCost, backprop, optimize enough to rewrite all of it
 * Change babelrc config back
-* Bidirectional RNN: https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/191dd7df9cb91ac22f56ed0dfa4a5651e8767a51/2-Figure2-1.png
+* Graph / Mat ... immut data that holds pure funcs (that return new instance of self) as opposed to classes that hold/mutate data via self-mutative funcs
 * rework Graph
   * Convert graph to object factory, can return runBackprop every time, keeping track of backprop funcs in closure or something
 * Maybe another data structure to represent a layer..and/or one to represent a DNN (could be called network, graph, whatever)
-
 * Output epoch so caller can anneal learning rate per epoch if desired
   * Verify decayRate functionality
 
 ## Restructure
 
+* [IN PROGRESS] understand computeCost, backprop, optimize enough to rewrite all of it
 * [IN PROGRESS] Restructuring and improving Model
   * [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - how does lh.o.dw = ... have any effect? So much reliance on weird side-effects...uggh
   * Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
@@ -24,18 +20,6 @@ does it make sense for hidden size to be bigger than letter size?
       * forwardRNN/LSTM side-effects the passed in Graph, which is then used in Model to do backprop
       * forwardRNN/LSTM side-effects prev.c, prev.h
       * optimize side-effects passed in stepCache...maybe just make immutable
-* review each module
-  * Model
-    * computeCost
-      * understand math
-      * understand how lh.o.dw is having any effect
-  * Solver
-  * RNN
-  * Utils
-  * Mat (done)
-  * Graph (done)
-    * Consider moving some of this code to other modules
-* get a solid understanding of relationships between all modules and how forward/backward prop works in this code, then consider major restructuring
 
 ## Data Augmentation
 
@@ -47,6 +31,7 @@ does it make sense for hidden size to be bigger than letter size?
 
 ## Ideas
 
+* Bidirectional RNN: https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/191dd7df9cb91ac22f56ed0dfa4a5651e8767a51/2-Figure2-1.png
 * functions (or generators?) and object factories instead of classes
 * Maybe bring in a math lib (math.js? http://mathjs.org/docs/datatypes/matrices.html)
 * Maybe use generator / call stack type data structure for Graph
@@ -54,12 +39,11 @@ does it make sense for hidden size to be bigger than letter size?
 
 ## Optimizations
 
-* checkpoint callback (write to local storage?)
 * Optimize for perf in node.js env
 * Port to other languages. Go?
 * use web worker https://survivejs.com/webpack/techniques/web-workers/
 
-## Next
+## Someday
 
 * Convert to tensorflow.js
 
@@ -72,7 +56,9 @@ does it make sense for hidden size to be bigger than letter size?
 
 Use same tags as this https://github.com/mvrahden/recurrent-js
 
-// TODO: try messing with charCountThreshold sometime (need to fix bug above first)
+try messing with charCountThreshold sometime (need to fix bug above first)
+experiment with ridiculously large hidden sizes and letter sizes
+does it make sense for hidden size to be bigger than letter size?
 
 layer
 forward -> activations
