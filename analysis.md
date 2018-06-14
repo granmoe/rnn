@@ -46,17 +46,28 @@ Should forwardLSTM and forwardRNN go in forward.js, too? Prob since that's the o
 
 =============
 
-* create
-* load
-* serialize
+* io
+
+  * create
+  * load
+  * serialize
 
 * train
 
   * forward
-  * backward
+    * computeCost
+    * predictSentence
+    * forwardIndex (forwardLSTM/RNN)
+  * backward (what to do with Graph?)
   * optimize?
 
-* Mat
+* Mat is good on its own (but could rewrite if convert to immut)
+
 * Graph is the odd man out
 
 Create graph of imports (use webpack analyzer) and reorganize code accordingly
+
+RNN.js
+
+// Prob start analysis of this module with RNN since it's simpler
+// split RNN and LSTM into separate files?

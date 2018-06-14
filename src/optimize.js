@@ -17,12 +17,12 @@ export default ({
       stepCache[matName] = new Mat(mat.rows, mat.cols)
     }
 
-    let s = stepCache[matName]
+    const s = stepCache[matName]
 
     for (const i of range(mat.w.length)) {
       // rmsprop adaptive learning rate
       let mdwi = mat.dw[i]
-      s.w[i] = s.w[i] * decayRate + (1.0 - decayRate) * mdwi * mdwi
+      s.w[i] = s.w[i] * decayRate + (1 - decayRate) * mdwi * mdwi
 
       // gradient clip
       if (Math.abs(mdwi) > clipVal) {
@@ -30,7 +30,7 @@ export default ({
       }
 
       // update (and regularize)
-      mat.w[i] += -learningRate * mdwi / Math.sqrt(s.w[i] + smoothEps) - regc * mat.w[i]
+      mat.w[i] -= learningRate * mdwi / Math.sqrt(s.w[i] + smoothEps) - regc * mat.w[i]
       mat.dw[i] = 0 // reset gradients for next iteration
     }
   }

@@ -1,8 +1,5 @@
-import optimize from './optimize'
-import { computeCost, predictSentence } from './forward'
-import { randInt, range } from './utils'
-import { initRNN, initLSTM } from './RNN'
-import { matFromJSON } from './Mat'
+import makeTrainFunc from './train'
+import Mat, { RandMat, matFromJSON } from './Mat'
 
 export function create({
   // BASIC HYPER PARAMS
@@ -14,7 +11,7 @@ export function create({
   // OPTIMIZATION HYPER PARAMS
   regc = 0.000001, // L2 regularization strength
   clipVal = 5, // clip gradients at this value
-  decayRate = 0.999,
+  decayRate = 0.9,
   smoothEps = 1e-8,
   // these are only passed in when restarting a saved model
   stepCache = {},
@@ -29,73 +26,18 @@ export function create({
 }) {
   const { model, textModel } = models
 
-  const train = ({
-    numIterations = 1,
-    temperature = 1, // how peaky model predictions should be
-    learningRate = 0.01,
-    maxCharsGen,
-  } = {}) => {
-    for (const currentIteration of range(1, numIterations)) {
-      totalIterations += 1
-
-      const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
-
-      const { graph, perplexity, cost } = computeCost({
-        model,
-        type,
-        textModel,
-        hiddenSizes,
-        sentence: randomSentence,
-      })
-      // use built up graph to compute backprop (set .dw fields in mats)
-      graph.runBackprop()
-      // perform param update using gradients computed during backprop...
-      // this all seems kind of indirect...consider restructuring...
-      // looks like the purpose of dw is just to keep track of gradients temporarily
-      // maybe do this in a functional way
-      optimize({
-        model,
-        learningRate,
-        regc,
-        clipVal,
-        decayRate,
-        smoothEps,
-        stepCache,
-      })
-
-      if (currentIteration === numIterations) {
-        const argMaxPrediction = predictSentence({
-          type,
-          model,
-          textModel,
-          hiddenSizes,
-          sample: false,
-          temperature,
-          maxCharsGen,
-        })
-
-        const samples = Array.from({ length: 3 }, () =>
-          predictSentence({
-            type,
-            model,
-            textModel,
-            hiddenSizes,
-            sample: true,
-            temperature,
-            maxCharsGen,
-          }),
-        )
-
-        return {
-          iterations: totalIterations,
-          perplexity,
-          cost,
-          argMaxPrediction,
-          samples,
-        }
-      }
-    }
-  }
+  const train = makeTrainFunc({
+    type,
+    hiddenSizes,
+    regc,
+    clipVal,
+    decayRate,
+    smoothEps,
+    stepCache,
+    totalIterations,
+    model,
+    textModel,
+  })
 
   const toJSON = () =>
     JSON.stringify({
@@ -167,6 +109,59 @@ function createTextModel(sentences, charCountThreshold = 1) {
 
     return result
   }, initialVocabData)
+}
+
+function initRNN(inputSize, hiddenSizes, outputSize) {
+  const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
+    const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
+
+    model['Wxh' + index] = new RandMat(hiddenSize, prevSize, 0.08)
+    model['Whh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['bhh' + index] = new Mat(hiddenSize, 1)
+  }, {})
+
+  // decoder params
+  model['Whd'] = new RandMat(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
+  model['bd'] = new Mat(outputSize, 1)
+
+  // letter embedding vectors
+  model['Wil'] = new RandMat(outputSize, inputSize, 0, 0.08)
+
+  return model
+}
+
+// inputSize = letterSize, outputSize = num unique chars
+function initLSTM(inputSize, hiddenSizes, outputSize) {
+  return hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
+    const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
+
+    // input gate
+    model['Wix' + index] = new RandMat(hiddenSize, prevSize, 0.08)
+    model['Wih' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['bi' + index] = new Mat(hiddenSize, 1)
+    // forget gate
+    model['Wfx' + index] = new RandMat(hiddenSize, prevSize, 0.08)
+    model['Wfh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['bf' + index] = new Mat(hiddenSize, 1)
+    // output gate
+    model['Wox' + index] = new RandMat(hiddenSize, prevSize, 0.08)
+    model['Woh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['bo' + index] = new Mat(hiddenSize, 1)
+
+    // cell write params
+    model['Wcx' + index] = new RandMat(hiddenSize, prevSize, 0.08)
+    model['Wch' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['bc' + index] = new Mat(hiddenSize, 1)
+
+    // decoder params
+    model['Whd'] = new RandMat(outputSize, hiddenSize, 0.08)
+    model['bd'] = new Mat(outputSize, 1)
+
+    // letter embedding vectors
+    model['Wil'] = new RandMat(outputSize, inputSize, 0.08)
+
+    return model
+  }, {})
 }
 
 export function loadFromJSON(json) {

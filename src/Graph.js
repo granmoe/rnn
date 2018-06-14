@@ -10,27 +10,26 @@ export default class Graph {
 
   runBackprop() {
     for (const backpropFunc of this.backpropFuncs) {
-      backpropFunc() // tick! <- What does this mean?
+      backpropFunc()
     }
   }
 
   rowPluck(m, ix) {
-    function backward() {
-      for (const i of range(cols)) {
-        m.dw[cols * ix + i] += out.dw[i]
-      }
-    }
-
     assert(ix >= 0 && ix < m.rows)
 
     // pluck a row of m with index ix and return it as col vector
-    let cols = m.cols
-    let out = new Mat(cols, 1)
+    const cols = m.cols
+    const out = new Mat(cols, 1)
     out.updateW((w, i) => m.w[cols * ix + i])
 
     if (this.doBackprop) {
-      this.backpropFuncs.unshift(backward)
+      this.backpropFuncs.unshift(() => {
+        for (const i of range(cols)) {
+          m.dw[cols * ix + i] += out.dw[i]
+        }
+      })
     }
+
     return out
   }
 

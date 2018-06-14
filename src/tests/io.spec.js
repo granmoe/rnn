@@ -1,4 +1,4 @@
-import { create, loadFromJSON } from '../Model'
+import { create, loadFromJSON } from '../io'
 import { predictSentence, computeCost } from '../forward'
 import { rnnJSON, input } from './model-test-data'
 

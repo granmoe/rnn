@@ -5,10 +5,15 @@ does it make sense for hidden size to be bigger than letter size?
 
 ## Inbox
 
-* Next: focus on computeCost and all related code
-* Need to reorganize model...too big. Maybe split out everything not related to creating/loading/serializing...or split out to/from json into a separate file?
+* [IN PROGRESS] understand computeCost, backprop, optimize enough to rewrite all of it
+* Change babelrc config back
+* Bidirectional RNN: https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/191dd7df9cb91ac22f56ed0dfa4a5651e8767a51/2-Figure2-1.png
+* rework Graph
+  * Convert graph to object factory, can return runBackprop every time, keeping track of backprop funcs in closure or something
 * Maybe another data structure to represent a layer..and/or one to represent a DNN (could be called network, graph, whatever)
+
 * Output epoch so caller can anneal learning rate per epoch if desired
+  * Verify decayRate functionality
 
 ## Restructure
 
@@ -68,3 +73,7 @@ does it make sense for hidden size to be bigger than letter size?
 Use same tags as this https://github.com/mvrahden/recurrent-js
 
 // TODO: try messing with charCountThreshold sometime (need to fix bug above first)
+
+layer
+forward -> activations
+gradients
