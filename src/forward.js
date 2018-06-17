@@ -1,6 +1,6 @@
 import Graph from './Graph'
 import Mat from './Mat'
-import { slidingWindow, softmax, maxIndex, sampleIndex } from './utils'
+import { softmax, maxIndex, sampleIndex } from './utils'
 
 // calculates loss of model on a given sentence and returns graph to be used for backprop
 // graph.runBackprop side-effects model via closures
@@ -12,7 +12,12 @@ export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
   const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
   let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
 
-  for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
+  // TODO: Maybe someday I can change this back to my pretty, customer iterator :(
+  // But for now, for...of is just too damn slow
+  // for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
+  for (let i = 0; i < delimitedSentence.length - 1; i++) {
+    const currentCharIndex = delimitedSentence[i]
+    const nextCharIndex = delimitedSentence[i + 1]
     // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
     lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
     const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs

@@ -1,4 +1,4 @@
-import { assert, range, updateMats } from './utils'
+import { assert, updateMats } from './utils'
 import Mat from './Mat'
 
 // Does matrix ops, keeps track of backprop and performs backprop
@@ -9,8 +9,8 @@ export default class Graph {
   }
 
   runBackprop() {
-    for (const backpropFunc of this.backpropFuncs) {
-      backpropFunc()
+    for (let i = 0; i < this.backpropFuncs.length; i++) {
+      this.backpropFuncs[i]()
     }
   }
 
@@ -24,7 +24,7 @@ export default class Graph {
 
     if (this.doBackprop) {
       this.backpropFuncs.unshift(() => {
-        for (const i of range(cols)) {
+        for (let i = 0; i < cols; i++) {
           m.dw[cols * ix + i] += out.dw[i]
         }
       })
@@ -78,7 +78,7 @@ export default class Graph {
       const { row, col } = mat.indexToCoord(i)
 
       let dot = 0
-      for (const n of range(m1.cols)) {
+      for (let n = 0; n < m1.cols; n++) {
         dot += m1.w[n + row * m1.cols] * m2.w[n * m2.cols + col]
       }
 
@@ -90,7 +90,7 @@ export default class Graph {
         out.dw.map((b, i) => {
           const { row, col } = out.indexToCoord(i)
 
-          for (const n of range(m1.cols)) {
+          for (let n = 0; n < m1.cols; n++) {
             const m1i = n + row * m1.cols
             const m2i = n * m2.cols + col
 
