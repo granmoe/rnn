@@ -72,7 +72,7 @@ export const matFromJSON = ({ rows, cols, weights }) => {
 }
 
 // return Mat but filled with random numbers from gaussian
-export const RandMat = (rows, cols, std) =>
+export const randMat = (rows, cols, std) =>
   new Mat(rows, cols).updateW(_ => randFloat(-std, std)) // kind of :P
 
 const zeros = count => new Float64Array(count)

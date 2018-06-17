@@ -1,12 +1,23 @@
 {
-  "presets": [
-    [
-      "@babel/preset-env",
-      {
-        "targets": {
-          "Chrome": "last 2 versions"
-        }
-      }
-    ]
-  ]
+  "env": {
+    "dev": {
+      "presets": [
+        [
+          "@babel/preset-env",
+          {
+            "targets": {
+              "chrome": 65
+            }
+          }
+        ]
+      ],
+      "plugins": ["@babel/plugin-proposal-object-rest-spread"]
+    },
+    "prod": {
+      "presets": ["@babel/preset-env"]
+    },
+    "test": {
+      "presets": ["@babel/preset-env"]
+    }
+  }
 }

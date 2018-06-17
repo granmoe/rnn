@@ -4,8 +4,8 @@
   "description": "A modernized version of Andrej Karpathy's recurrent-js",
   "main": "dist/index.js",
   "scripts": {
-    "compile": "babel src -d dist --ignore '**/*.spec.js'",
-    "dev": "babel --watch src -d dist --ignore '**/*.spec.js'",
+    "compile": "BABEL_ENV=prod babel src -d dist --ignore '**/tests/**'",
+    "dev": "BABEL_ENV=dev babel --watch src -d dist --ignore '**/tests/**'",
     "prepublishOnly": "npm run compile",
     "test": "jest",
     "test:watch": "jest --watch"
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.46",
     "@babel/core": "7.0.0-beta.46",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.51",
     "@babel/preset-env": "^7.0.0-beta.46",
     "babel-core": "^7.0.0-0",
     "babel-eslint": "^8.2.2",
@@ -30,7 +31,8 @@
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
-    "jest": "^22.4.3"
+    "jest": "^22.4.3",
+    "prepack": "^0.2.38"
   },
   "repository": {
     "type": "git",

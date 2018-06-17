@@ -2,8 +2,6 @@
 
 ## Inbox
 
-* Get chrome env preset working
-* Create dev/dist babelrc config sections
 * Graph / Mat ... immut data that holds pure funcs (that return new instance of self) as opposed to classes that hold/mutate data via self-mutative funcs
 * rework Graph
   * Convert graph to object factory, can return runBackprop every time, keeping track of backprop funcs in closure or something

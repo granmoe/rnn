@@ -10,7 +10,7 @@ updateMats x 2
 
 ## RNN
 
-new RandMat(rows, cols, 0.08) x 11
+randMat(rows, cols, 0.08) x 11
 new Mat(foo, 1) x 8
 
 ## Solver

@@ -1,5 +1,5 @@
 import makeTrainFunc from './train'
-import Mat, { RandMat, matFromJSON } from './Mat'
+import Mat, { randMat, matFromJSON } from './Mat'
 
 export function create({
   // BASIC HYPER PARAMS
@@ -115,17 +115,17 @@ function initRNN(inputSize, hiddenSizes, outputSize) {
   const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
-    model['Wxh' + index] = new RandMat(hiddenSize, prevSize, 0.08)
-    model['Whh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['Wxh' + index] = randMat(hiddenSize, prevSize, 0.08)
+    model['Whh' + index] = randMat(hiddenSize, hiddenSize, 0.08)
     model['bhh' + index] = new Mat(hiddenSize, 1)
   }, {})
 
   // decoder params
-  model['Whd'] = new RandMat(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
+  model['Whd'] = randMat(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
   model['bd'] = new Mat(outputSize, 1)
 
   // letter embedding vectors
-  model['Wil'] = new RandMat(outputSize, inputSize, 0, 0.08)
+  model['Wil'] = randMat(outputSize, inputSize, 0, 0.08)
 
   return model
 }
@@ -136,29 +136,29 @@ function initLSTM(inputSize, hiddenSizes, outputSize) {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
     // input gate
-    model['Wix' + index] = new RandMat(hiddenSize, prevSize, 0.08)
-    model['Wih' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['Wix' + index] = randMat(hiddenSize, prevSize, 0.08)
+    model['Wih' + index] = randMat(hiddenSize, hiddenSize, 0.08)
     model['bi' + index] = new Mat(hiddenSize, 1)
     // forget gate
-    model['Wfx' + index] = new RandMat(hiddenSize, prevSize, 0.08)
-    model['Wfh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['Wfx' + index] = randMat(hiddenSize, prevSize, 0.08)
+    model['Wfh' + index] = randMat(hiddenSize, hiddenSize, 0.08)
     model['bf' + index] = new Mat(hiddenSize, 1)
     // output gate
-    model['Wox' + index] = new RandMat(hiddenSize, prevSize, 0.08)
-    model['Woh' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['Wox' + index] = randMat(hiddenSize, prevSize, 0.08)
+    model['Woh' + index] = randMat(hiddenSize, hiddenSize, 0.08)
     model['bo' + index] = new Mat(hiddenSize, 1)
 
     // cell write params
-    model['Wcx' + index] = new RandMat(hiddenSize, prevSize, 0.08)
-    model['Wch' + index] = new RandMat(hiddenSize, hiddenSize, 0.08)
+    model['Wcx' + index] = randMat(hiddenSize, prevSize, 0.08)
+    model['Wch' + index] = randMat(hiddenSize, hiddenSize, 0.08)
     model['bc' + index] = new Mat(hiddenSize, 1)
 
     // decoder params
-    model['Whd'] = new RandMat(outputSize, hiddenSize, 0.08)
+    model['Whd'] = randMat(outputSize, hiddenSize, 0.08)
     model['bd'] = new Mat(outputSize, 1)
 
     // letter embedding vectors
-    model['Wil'] = new RandMat(outputSize, inputSize, 0.08)
+    model['Wil'] = randMat(outputSize, inputSize, 0.08)
 
     return model
   }, {})
