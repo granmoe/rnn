@@ -1,6 +1,7 @@
 import makeTrainFunc from './train'
 import Mat, { randMat, matFromJSON } from './Mat'
 
+// TODO: Should create and its child funcs be its own module?
 export function create({
   // BASIC HYPER PARAMS
   type,

@@ -2,43 +2,6 @@ import Graph from './Graph'
 import Mat from './Mat'
 import { softmax, maxIndex, sampleIndex } from './utils'
 
-// calculates loss of model on a given sentence and returns graph to be used for backprop
-// graph.runBackprop side-effects model via closures
-export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
-  const graph = new Graph()
-  let log2ppl = 0
-  let cost = 0
-  let lh = {}
-  const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
-  let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
-
-  // TODO: Maybe someday I can change this back to my pretty, customer iterator :(
-  // But for now, for...of is just too damn slow
-  // for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
-  for (let i = 0; i < delimitedSentence.length - 1; i++) {
-    const currentCharIndex = delimitedSentence[i]
-    const nextCharIndex = delimitedSentence[i + 1]
-    // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
-    lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
-    const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
-
-    const nextCharProbability = probs.w[nextCharIndex]
-    // binary logarithm 0 ... 1 = -Infinity ... 1
-    log2ppl -= Math.log2(nextCharProbability) // accumulate binary log prob and do smoothing
-    // natural logarithm, 0 ... 1 = -Infinity ... 0
-    // since softmax will be between 0 and 1 exclusive, cost will always be negative
-    // high prob = low cost, low prob = high cost
-    cost -= Math.log(nextCharProbability)
-
-    // write gradients into log probabilities
-    lh.o.dw = probs.w
-    lh.o.dw[nextCharIndex] -= 1
-  }
-
-  const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
-  return { graph, perplexity, cost }
-}
-
 export function predictSentence({
   type,
   model,
@@ -75,6 +38,43 @@ export function predictSentence({
   } while (charIndex !== 0 && sentence.length <= maxCharsGen)
 
   return sentence
+}
+
+// calculates loss of model on a given sentence and returns graph to be used for backprop
+// graph.runBackprop side-effects model via closures
+export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
+  const graph = new Graph()
+  let log2ppl = 0
+  let cost = 0
+  let lh = {}
+  const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
+  let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
+
+  // TODO: Maybe someday I can change this back to my pretty, customer iterator :(
+  // But for now, for...of is just too damn slow
+  // for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
+  for (let i = 0; i < delimitedSentence.length - 1; i++) {
+    const currentCharIndex = delimitedSentence[i]
+    const nextCharIndex = delimitedSentence[i + 1]
+    // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
+    lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
+    const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
+
+    const nextCharProbability = probs.w[nextCharIndex]
+    // binary logarithm 0 ... 1 = -Infinity ... 1
+    log2ppl -= Math.log2(nextCharProbability) // accumulate binary log prob and do smoothing
+    // natural logarithm, 0 ... 1 = -Infinity ... 0
+    // since softmax will be between 0 and 1 exclusive, cost will always be negative
+    // high prob = low cost, low prob = high cost
+    cost -= Math.log(nextCharProbability)
+
+    // write gradients into log probabilities
+    lh.o.dw = probs.w
+    lh.o.dw[nextCharIndex] -= 1
+  }
+
+  const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
+  return { graph, perplexity, cost }
 }
 
 function forwardIndex(G, model, ix, prev, hiddenSizes, type) {
