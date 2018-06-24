@@ -1,7 +1,13 @@
 # TODO
 
+- Graph refactor
+- Bidirectional
+- Learning rate annealing
+- Renaming
+
 ## Inbox
 
+- Rename w -> weights and dw -> gradients
 - !!! Don't serialize input. Developer may want to pass in different input during different training sessions anyway.
 - Graph / Mat ... immut data that holds pure funcs (that return new instance of self) as opposed to classes that hold/mutate data via self-mutative funcs
 - rework Graph

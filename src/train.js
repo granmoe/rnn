@@ -9,7 +9,7 @@ const makeTrainFunc = ({
   regc,
   clipVal,
   decayRate,
-  smoothEps,
+  smoothingEpsilon,
   stepCache,
   totalIterations,
   model,
@@ -47,7 +47,7 @@ const makeTrainFunc = ({
         regc,
         clipVal,
         decayRate,
-        smoothEps,
+        smoothingEpsilon,
         stepCache,
       })
 

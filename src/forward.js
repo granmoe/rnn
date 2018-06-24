@@ -73,6 +73,15 @@ export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
     lh.o.dw[nextCharIndex] -= 1
   }
 
+  /*
+    TODO BI-RNN: 
+    
+    Sum the gradients of backward/forward
+    Sum the log2ppl and cost
+
+    forward/backward both create 3 arrays: grads, log2ppl and cost
+  */
+
   const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
   return { graph, perplexity, cost }
 }

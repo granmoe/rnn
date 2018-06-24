@@ -13,7 +13,7 @@ export function create({
   regc = 0.000001, // L2 regularization strength
   clipVal = 5, // clip gradients at this value
   decayRate = 0.9,
-  smoothEps = 1e-8,
+  smoothingEpsilon = 1e-8, // to avoid division by zero
   // these are only passed in when restarting a saved model
   stepCache = {},
   totalIterations = 0,
@@ -33,7 +33,7 @@ export function create({
     regc,
     clipVal,
     decayRate,
-    smoothEps,
+    smoothingEpsilon,
     stepCache,
     totalIterations,
     model,
@@ -51,7 +51,7 @@ export function create({
         textModel,
         model: modelToJSON(model),
       },
-      smoothEps,
+      smoothingEpsilon,
       decayRate,
       stepCache: modelToJSON(stepCache),
     })
