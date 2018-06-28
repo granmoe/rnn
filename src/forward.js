@@ -113,7 +113,7 @@ function forwardLSTM(graph, model, x, prev, hiddenSizes) {
   }
 
   const { hidden, cell } = hiddenSizes.reduce(
-    (result, hiddenSize, index, hiddenSizes) => {
+    (result, hiddenSize, index) => {
       let inputVector = index === 0 ? x : result.hidden[index - 1]
       let hiddenPrev = hiddenPrevs[index]
       let cellPrev = cellPrevs[index]

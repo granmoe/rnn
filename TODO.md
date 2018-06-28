@@ -1,5 +1,6 @@
 # TODO
 
+- Only return samples if sample option passed as true to train()
 - Graph refactor
 - Bidirectional
 - Learning rate annealing

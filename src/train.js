@@ -20,6 +20,7 @@ const makeTrainFunc = ({
     temperature = 1, // how peaky model predictions should be
     learningRate = 0.01,
     maxCharsGen,
+    sampleFrequency = null, // how often to return samples and argmax (don't sample if not a number > 1)
   } = {}) => {
     for (const currentIteration of range(1, numIterations)) {
       totalIterations += 1
@@ -52,27 +53,30 @@ const makeTrainFunc = ({
       })
 
       if (currentIteration === numIterations) {
-        const argMaxPrediction = predictSentence({
-          type,
-          model,
-          textModel,
-          hiddenSizes,
-          sample: false,
-          temperature,
-          maxCharsGen,
-        })
-
-        const samples = Array.from({ length: 3 }, () =>
-          predictSentence({
+        let argMaxPrediction, samples
+        if (sampleFrequency && totalIterations % sampleFrequency === 0) {
+          argMaxPrediction = predictSentence({
             type,
             model,
             textModel,
             hiddenSizes,
-            sample: true,
+            sample: false,
             temperature,
             maxCharsGen,
-          }),
-        )
+          })
+
+          samples = Array.from({ length: 3 }, () =>
+            predictSentence({
+              type,
+              model,
+              textModel,
+              hiddenSizes,
+              sample: true,
+              temperature,
+              maxCharsGen,
+            }),
+          )
+        }
 
         return {
           iterations: totalIterations,
