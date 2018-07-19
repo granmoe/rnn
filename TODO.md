@@ -3,9 +3,9 @@
 - Graph refactor
   - TDD: Start with small functions...unit tests...build up to graph.forward
   - Update code per graph refactor...get it working...check perf
-    - stabilize graph...get output working with forward/backward refactor
     - rename dw -> gradients, w -> weights
     - create a cachedGradients field on Mat that tracks what stepCache currently does
+    - consider restructuring Mat
 
 # Next
 
@@ -26,7 +26,6 @@
 
 ## Restructure
 
-- [IN PROGRESS] understand computeCost, backprop, optimize enough to rewrite all of it
 - [IN PROGRESS] Restructuring and improving Model
   - [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - how does lh.o.dw = ... have any effect? So much reliance on weird side-effects...uggh
   - Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.

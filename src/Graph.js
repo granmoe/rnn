@@ -50,10 +50,11 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       for (let i = 0; i < cols; i++) {
         m.dw[cols * ix + i] += out.dw[i]
       }
+      next()
     })
 
     return out
@@ -68,8 +69,9 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       m.updateDw((dw, i) => dw + (1 - out.w[i] * out.w[i]) * out.dw[i])
+      next()
     })
 
     return out
@@ -84,9 +86,10 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       // grad for z = tanh(x) is (1 - z^2)
       m.updateDw((dw, i) => dw + out.w[i] * (1 - out.w[i]) * out.dw[i])
+      next()
     })
 
     return out
@@ -101,8 +104,9 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       m.updateDw((dw, i) => (dw + m.w[i] > 0 ? out.dw[i] : 0))
+      next()
     })
 
     return out
@@ -142,7 +146,7 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       out.dw.map((b, i) => {
         const { row, col } = out.indexToCoord(i)
 
@@ -154,6 +158,7 @@ export default class Graph {
           m2.dw[m2i] += m1.w[m1i] * b
         }
       })
+      next()
     })
 
     // TODO NOW: The issue is that mul immediately returns a zero mat
@@ -171,10 +176,11 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       updateMats((m1w, m1dw, m2w, m2dw, outw, outdw) => {
         return [m1w, m1dw + outdw, m2w, m2dw + outdw]
       })(m1, m2, out)
+      next()
     })
 
     return out
@@ -190,10 +196,11 @@ export default class Graph {
       return next(out)
     })
 
-    this.backwardFunctions.unshift(() => {
+    this.backwardFunctions.unshift(next => () => {
       updateMats((m1w, m1dw, m2w, m2dw, outw, outdw) => {
         return [m1w, m2w * outdw, m2w, m1w * outdw]
       })(m1, m2, out)
+      next()
     })
 
     return out

@@ -36,7 +36,7 @@ const makeTrainFunc = ({
 
       // use built up graph to compute backprop (set .dw fields in mats)
       // TODO NEXT: Fix this
-      // graph.runBackprop()
+      graph.backward()
 
       // perform param update using gradients computed during backprop...
       // this all seems kind of indirect...consider restructuring...

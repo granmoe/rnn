@@ -1,4 +1,7 @@
-import { assert, randFloat } from './utils'
+import { randFloat } from './utils'
+
+// TODO: Consider making w and dw each a Mat
+// Then make a composite data structure from these (could be called "layer")
 
 // TODO: Change rows/cols to rowCount, colCount or numRows, numCols
 // TODO: Consider renaming w to weights and dw to gradients
@@ -17,24 +20,6 @@ export default class Mat {
       row: Math.ceil((i + 1) / this.cols) - 1,
       col: ((i + 1) % this.cols || this.cols) - 1,
     }
-  }
-
-  coordToIndex(row, col) {
-    // is this used anywhere? should give a once over and delete dead code everywhere
-    return this.cols * row + col
-  }
-
-  get(row, col) {
-    // we want row-major order
-    let ix = this.cols * row + col
-    assert(ix >= 0 && ix < this.w.length)
-    return this.w[ix]
-  }
-
-  set(row, col, v) {
-    let ix = this.cols * row + col
-    assert(ix >= 0 && ix < this.w.length)
-    this.w[ix] = v
   }
 
   updateW(func) {
