@@ -2,7 +2,7 @@ import optimize from './optimize'
 import { computeCost, predictSentence } from './forward'
 import { randInt, range } from './utils'
 
-// make a train function that closes around a given model instance and its params
+// make a train function that closes around a given graph instance and its params
 const makeTrainFunc = ({
   type,
   hiddenSizes,
@@ -12,7 +12,7 @@ const makeTrainFunc = ({
   smoothingEpsilon,
   stepCache,
   totalIterations,
-  model,
+  graph,
   textModel,
 }) => {
   return ({
@@ -27,37 +27,38 @@ const makeTrainFunc = ({
 
       const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
 
-      const { graph, perplexity, cost } = computeCost({
-        model,
+      const { perplexity, cost } = computeCost({
+        graph,
         type,
         textModel,
-        hiddenSizes,
         sentence: randomSentence,
       })
 
       // use built up graph to compute backprop (set .dw fields in mats)
-      graph.runBackprop()
+      // TODO NEXT: Fix this
+      // graph.runBackprop()
 
       // perform param update using gradients computed during backprop...
       // this all seems kind of indirect...consider restructuring...
       // looks like the purpose of dw is just to keep track of gradients temporarily
       // maybe do this in a functional way...generators?
-      optimize({
-        model,
-        learningRate,
-        regc,
-        clipVal,
-        decayRate,
-        smoothingEpsilon,
-        stepCache,
-      })
+      // TODO: Get this working
+      // optimize({
+      //   graph,
+      //   learningRate,
+      //   regc,
+      //   clipVal,
+      //   decayRate,
+      //   smoothingEpsilon,
+      //   stepCache,
+      // })
 
       if (currentIteration === numIterations) {
         let argMaxPrediction, samples
         if (sampleFrequency && totalIterations % sampleFrequency === 0) {
           argMaxPrediction = predictSentence({
             type,
-            model,
+            graph,
             textModel,
             hiddenSizes,
             sample: false,
@@ -68,7 +69,7 @@ const makeTrainFunc = ({
           samples = Array.from({ length: 3 }, () =>
             predictSentence({
               type,
-              model,
+              graph,
               textModel,
               hiddenSizes,
               sample: true,

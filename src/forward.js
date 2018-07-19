@@ -1,27 +1,22 @@
 import Graph from './Graph'
-import Mat from './Mat'
+import Mat, { randMat } from './Mat'
 import { softmax, maxIndex, sampleIndex } from './utils'
 
 export function predictSentence({
-  type,
-  model,
+  graph,
   textModel,
-  hiddenSizes,
   maxCharsGen = 100, // length of output
   sample = false,
   temperature = 1,
 }) {
-  let lh, logprobs, probs
-  let graph = new Graph({ doBackprop: false }) // Just predict (forward), don't do backprop
+  let logprobs, probs
   let sentence = ''
-  let prev = {}
   let charIndex = 0
 
   do {
-    lh = forwardIndex(graph, model, charIndex, prev, hiddenSizes, type)
-    prev = lh
+    const output = graph.forward(charIndex, { doBackprop: false })
 
-    logprobs = lh.o
+    logprobs = output
     if (temperature !== 1 && sample) {
       // Scale log probabilities by temperature and renormalize
       // If temperature is high, logprobs will go towards zero,
@@ -42,11 +37,9 @@ export function predictSentence({
 
 // calculates loss of model on a given sentence and returns graph to be used for backprop
 // graph.runBackprop side-effects model via closures
-export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
-  const graph = new Graph()
+export function computeCost({ textModel, sentence, graph, type }) {
   let log2ppl = 0
   let cost = 0
-  let lh = {}
   const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
   let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
 
@@ -57,8 +50,9 @@ export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
     const currentCharIndex = delimitedSentence[i]
     const nextCharIndex = delimitedSentence[i + 1]
     // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
-    lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
-    const probs = softmax(lh.o) // compute the softmax probabilities, interpreting output as logprobs
+    const output = graph.forward(currentCharIndex, { doBackprop: true }) // TODO: Turn this back on eventually
+    // lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
+    const probs = softmax(output) // compute the softmax probabilities, interpreting output as logprobs
 
     const nextCharProbability = probs.w[nextCharIndex]
     // binary logarithm 0 ... 1 = -Infinity ... 1
@@ -69,8 +63,8 @@ export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
     cost -= Math.log(nextCharProbability)
 
     // write gradients into log probabilities
-    lh.o.dw = probs.w
-    lh.o.dw[nextCharIndex] -= 1
+    output.dw = probs.w
+    output.dw[nextCharIndex] -= 1
   }
 
   /*
@@ -86,81 +80,64 @@ export function computeCost({ type, model, textModel, hiddenSizes, sentence }) {
   return { graph, perplexity, cost }
 }
 
-function forwardIndex(G, model, ix, prev, hiddenSizes, type) {
-  // Could this somehow be how prev.o.dw is having an effect?
-  const x = G.rowPluck(model['Wil'], ix) // char embedding for given char
-  // forward prop the sequence learner
-  return type === 'rnn'
-    ? forwardRNN(G, model, x, prev, hiddenSizes)
-    : forwardLSTM(G, model, x, prev, hiddenSizes)
-}
-
-// TODO: further refactoring here and make sure to understand everything
-function forwardLSTM(graph, model, x, prev, hiddenSizes) {
-  // forward prop for a single tick of LSTM
-  // model contains LSTM parameters
+// TODO: Grab declarations of mats from create model and merge them into here
+// Won't need to pass any args into here...except maybe hiddenSizes (are those on model?)
+export function createLSTM(inputSize, hiddenSizes, outputSize) {
+  // forward prop for a single tick of LSTM, model contains LSTM parameters
   // x is 1D column vector with observation
-  // prev is a struct containing hidden and cell
-  // from previous iteration
+  const graph = new Graph()
 
-  let hiddenPrevs, cellPrevs
-  if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
-    cellPrevs = [...hiddenPrevs]
-  } else {
-    hiddenPrevs = prev.h
-    cellPrevs = prev.c
-  }
+  const x = graph.rowPluck(randMat(outputSize, inputSize)) // Wil, graph.rowPluck then waits for second arg, which is the row vector of the letter at the given index
 
-  const { hidden, cell } = hiddenSizes.reduce(
-    (result, hiddenSize, index) => {
-      let inputVector = index === 0 ? x : result.hidden[index - 1]
-      let hiddenPrev = hiddenPrevs[index]
-      let cellPrev = cellPrevs[index]
+  // could maybe create these in the reduce below?
+  const hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
+  const cellPrevs = [...hiddenPrevs]
 
-      // input gate
-      let h0 = graph.mul(model['Wix' + index], inputVector)
-      let h1 = graph.mul(model['Wih' + index], hiddenPrev)
-      let inputGate = graph.sigmoid(graph.add(graph.add(h0, h1), model['bi' + index]))
+  const finalHidden = hiddenSizes.reduce((prevHidden, hiddenSize, index) => {
+    const input = prevHidden || x // output of last layer (but first layer takes input)
+    const hiddenPrev = hiddenPrevs[index]
+    const cellPrev = cellPrevs[index]
 
-      // forget gate
-      let h2 = graph.mul(model['Wfx' + index], inputVector)
-      let h3 = graph.mul(model['Wfh' + index], hiddenPrev)
-      let forgetGate = graph.sigmoid(graph.add(graph.add(h2, h3), model['bf' + index]))
+    // input gate
+    const h0 = graph.mul(randMat(hiddenSize, input.rows), input) // randMat is Wix[index] / layer['Wix']
+    const h1 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // randMat is Wih[index]
+    const inputGate = graph.sigmoid(graph.add(graph.add(h0, h1), new Mat(hiddenSize, 1))) // currentLayer.bi
 
-      // output gate
-      let h4 = graph.mul(model['Wox' + index], inputVector)
-      let h5 = graph.mul(model['Woh' + index], hiddenPrev)
-      let outputGate = graph.sigmoid(graph.add(graph.add(h4, h5), model['bo' + index]))
+    // forget gate
+    const h2 = graph.mul(randMat(hiddenSize, input.rows), input) // Wfx
+    const h3 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // Wfh
+    const forgetGate = graph.sigmoid(graph.add(graph.add(h2, h3), new Mat(hiddenSize, 1))) // bf
 
-      // write operation on cells
-      let h6 = graph.mul(model['Wcx' + index], inputVector)
-      let h7 = graph.mul(model['Wch' + index], hiddenPrev)
-      let cellWrite = graph.tanh(graph.add(graph.add(h6, h7), model['bc' + index]))
+    // output gate
+    const h4 = graph.mul(randMat(hiddenSize, input.rows), input) // Wox
+    const h5 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // Woh
+    const outputGate = graph.sigmoid(graph.add(graph.add(h4, h5), new Mat(hiddenSize, 1))) // bo
 
-      // compute new cell activation
-      let retainCell = graph.eltmul(forgetGate, cellPrev) // what do we keep from cell
-      let writeCell = graph.eltmul(inputGate, cellWrite) // what do we write to cell
-      let cellD = graph.add(retainCell, writeCell) // new cell contents
+    // write operation on cells
+    const h6 = graph.mul(randMat(hiddenSize, input.rows), input) // Wcx
+    const h7 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // Wch
+    const cellWrite = graph.tanh(graph.add(graph.add(h6, h7), new Mat(hiddenSize, 1))) // bc
 
-      // compute hidden state as gated, saturated cell activations
-      let hiddenD = graph.eltmul(outputGate, graph.tanh(cellD))
+    // compute new cell activation
+    const retainCell = graph.eltmul(forgetGate, cellPrev) // what do we keep from cell
+    const writeCell = graph.eltmul(inputGate, cellWrite) // what do we write to cell
+    const cellD = graph.add(retainCell, writeCell) // new cell contents
 
-      result.hidden.push(hiddenD)
-      result.cell.push(cellD)
-      // return [[...hidden, hiddenD], [...cell, cellD]]
-      return result
-    },
-    { hidden: [], cell: [] },
+    // compute hidden state as gated, saturated cell activations and pass it to next iteration
+    return graph.eltmul(outputGate, graph.tanh(cellD))
+  }, null)
+
+  // output, one decoder to outputs at end
+  graph.add(
+    graph.mul(randMat(outputSize, finalHidden.rows), finalHidden), // Whd
+    new Mat(outputSize, 1), // bd
   )
 
-  // one decoder to outputs at end
-  let output = graph.add(graph.mul(model['Whd'], hidden[hidden.length - 1]), model['bd'])
-
-  // return cell memory, hidden representation and output
-  return { h: hidden, c: cell, o: output }
+  // return the built up graph, which has a forward function we will use to do forward prop
+  return graph
 }
 
+// TODO RNN
 function forwardRNN(graph, model, x, prev, hiddenSizes) {
   // forward prop for a single tick of RNN
   // model contains RNN parameters

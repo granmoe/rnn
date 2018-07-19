@@ -1,7 +1,14 @@
-# TODO
+# In Progress
 
-- Only return samples if sample option passed as true to train()
 - Graph refactor
+  - TDD: Start with small functions...unit tests...build up to graph.forward
+  - Update code per graph refactor...get it working...check perf
+    - stabilize graph...get output working with forward/backward refactor
+    - rename dw -> gradients, w -> weights
+    - create a cachedGradients field on Mat that tracks what stepCache currently does
+
+# Next
+
 - Bidirectional
 - Learning rate annealing
 - Renaming

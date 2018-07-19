@@ -6,19 +6,14 @@ export const updateMats = func => (...mats) => {
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
   for (let i = 0; i < mats[0].w.length; i++) {
     const weights = mats.reduce((weights, mat) => [...weights, mat.w[i], mat.dw[i]], [])
-
     const results = func(...weights)
 
     mats.forEach((mat, mIndex) => {
       const w = results[mIndex * 2]
       const dw = results[mIndex * 2 + 1]
 
-      if (w !== undefined) {
-        mat.w[i] = results[mIndex * 2]
-      }
-      if (dw !== undefined) {
-        mat.dw[i] = results[mIndex * 2 + 1]
-      }
+      if (w !== undefined) mat.w[i] = w
+      if (dw !== undefined) mat.dw[i] = dw
     })
   }
 }

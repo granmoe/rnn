@@ -16,7 +16,9 @@ export default ({
       stepCache[matName] = new Mat(mat.rows, mat.cols)
     }
 
-    // Perhaps store this in each mat?
+    // TODO: Graph can provide an optimize method that calls this function, passing in itself?
+    // Graph needs a reference to each mat...maybe just throw each one in an array
+    // store this in each mat
     const s = stepCache[matName]
 
     for (let i = 0; i < mat.w.length; i++) {

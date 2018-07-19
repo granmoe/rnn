@@ -1,5 +1,6 @@
 import makeTrainFunc from './train'
 import Mat, { randMat, matFromJSON } from './Mat'
+import { createLSTM } from './forward'
 
 // TODO: Should create and its child funcs be its own module?
 export function create({
@@ -36,7 +37,7 @@ export function create({
     smoothingEpsilon,
     stepCache,
     totalIterations,
-    model,
+    graph: model,
     textModel,
   })
 
@@ -76,7 +77,7 @@ function createModels({ type, hiddenSizes, letterSize, input, charCountThreshold
   if (type === 'rnn') {
     model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
   } else {
-    model = initLSTM(letterSize, hiddenSizes, textModel.inputSize)
+    model = createLSTM(letterSize, hiddenSizes, textModel.inputSize)
   }
 
   return { model, textModel }
@@ -154,6 +155,7 @@ function initLSTM(inputSize, hiddenSizes, outputSize) {
     model['Wch' + index] = randMat(hiddenSize, hiddenSize, 0.08)
     model['bc' + index] = new Mat(hiddenSize, 1)
 
+    // TODO: Looks like these get overwritten every iteration
     // decoder params
     model['Whd'] = randMat(outputSize, hiddenSize, 0.08)
     model['bd'] = new Mat(outputSize, 1)
