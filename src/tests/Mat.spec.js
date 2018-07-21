@@ -7,7 +7,7 @@ describe('randMat', () => {
     expect(result.rows).toBe(20)
     expect(result.cols).toBe(30)
 
-    result.w.forEach(weight => {
+    result.weights.forEach(weight => {
       expect(weight < 0.5 && weight > -0.5).toBeTruthy()
     })
   })
@@ -15,7 +15,7 @@ describe('randMat', () => {
   test('produces a with random values between -0.08 and 0.08 when no bound is provided', () => {
     const result = randMat(40, 1)
 
-    result.w.forEach(weight => {
+    result.weights.forEach(weight => {
       expect(weight < 0.08 && weight > -0.08).toBeTruthy()
     })
   })

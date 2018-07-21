@@ -34,13 +34,13 @@ const makeTrainFunc = ({
         sentence: randomSentence,
       })
 
-      // use built up graph to compute backprop (set .dw fields in mats)
+      // use built up graph to compute backprop (set .gradients fields in mats)
       // TODO NEXT: Fix this
       graph.backward()
 
       // perform param update using gradients computed during backprop...
       // this all seems kind of indirect...consider restructuring...
-      // looks like the purpose of dw is just to keep track of gradients temporarily
+      // looks like the purpose of gradient is just to keep track of gradients temporarily
       // maybe do this in a functional way...generators?
       // TODO: Get this working
       // optimize({

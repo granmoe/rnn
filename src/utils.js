@@ -4,16 +4,19 @@ export const updateMats = func => (...mats) => {
   // TODO (someday): Assert that all mats have same length
   // I wonder if this whole loop and inner loop and everything could be one reduce?
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
-  for (let i = 0; i < mats[0].w.length; i++) {
-    const weights = mats.reduce((weights, mat) => [...weights, mat.w[i], mat.dw[i]], [])
+  for (let i = 0; i < mats[0].weights.length; i++) {
+    const weights = mats.reduce(
+      (allWeights, mat) => [...allWeights, mat.weights[i], mat.gradients[i]],
+      [],
+    )
     const results = func(...weights)
 
     mats.forEach((mat, mIndex) => {
-      const w = results[mIndex * 2]
-      const dw = results[mIndex * 2 + 1]
+      const weight = results[mIndex * 2]
+      const gradient = results[mIndex * 2 + 1]
 
-      if (w !== undefined) mat.w[i] = w
-      if (dw !== undefined) mat.dw[i] = dw
+      if (weight !== undefined) mat.weights[i] = weight
+      if (gradient !== undefined) mat.gradients[i] = gradient
     })
   }
 }
@@ -42,15 +45,15 @@ export const maxIndex = weights =>
       0,
     )
 
-// sample argmax from w, assuming w are probabilities that sum to one
-export function sampleIndex(w) {
+// sample argmax from weight, assuming weight are probabilities that sum to one
+export function sampleIndex(weight) {
   // TODO: Variable names here suck
   const r = randFloat(0, 1) // max value up to, but not including, 1
   let x = 0
   let i = 0
 
   while (x <= r) {
-    x += w[i]
+    x += weight[i]
     i++
   }
 
@@ -60,19 +63,19 @@ export function sampleIndex(w) {
 export function softmax(m) {
   const out = new Mat(m.rows, m.cols) // probability volume
 
-  const [firstW, ...remainingW] = m.w
+  const [firstW, ...remainingW] = m.weights
   let maxval = firstW
-  remainingW.forEach(w => {
-    if (w > maxval) maxval = w
+  remainingW.forEach(weight => {
+    if (weight > maxval) maxval = weight
   })
 
   let s = 0
-  for (let i = 0; i < m.w.length; i++) {
-    out.w[i] = Math.exp(m.w[i] - maxval)
-    s += out.w[i]
+  for (let i = 0; i < m.weights.length; i++) {
+    out.weights[i] = Math.exp(m.weights[i] - maxval)
+    s += out.weights[i]
   }
 
-  out.updateW(w => w / s)
+  out.updateW(weight => weight / s)
 
   // no backward pass here needed since we will use the computed
   // probabilities outside to set gradients directly on m

@@ -1,16 +1,15 @@
 import { randFloat } from './utils'
 
-// TODO: Consider making w and dw each a Mat
+// TODO: Consider making weights and gradients each a Mat
 // Then make a composite data structure from these (could be called "layer")
 
 // TODO: Change rows/cols to rowCount, colCount or numRows, numCols
-// TODO: Consider renaming w to weights and dw to gradients
 export default class Mat {
   constructor(rows, cols) {
     this.rows = rows
     this.cols = cols
-    this.w = zeros(rows * cols)
-    this.dw = zeros(rows * cols)
+    this.weights = zeros(rows * cols)
+    this.gradients = zeros(rows * cols)
 
     return this
   }
@@ -23,21 +22,21 @@ export default class Mat {
   }
 
   updateW(func) {
-    this.w.forEach((w, i) => {
-      this.w[i] = func(w, i, this)
+    this.weights.forEach((weight, i) => {
+      this.weights[i] = func(weight, i, this)
     })
     return this
   }
 
-  updateDw(func) {
-    this.dw = this.dw.map(func)
+  updateGradients(func) {
+    this.gradients = this.gradients.map(func)
     return this
   }
 
   clone() {
-    // does not copy over dw
+    // does not copy over gradients
     const copy = new Mat(this.rows, this.cols)
-    copy.w = new Float64Array(this.w)
+    copy.weights = new Float64Array(this.weights)
     return copy
   }
 
@@ -45,14 +44,14 @@ export default class Mat {
     return {
       rows: this.rows,
       cols: this.cols,
-      weights: this.w,
+      weights: this.weights,
     }
   }
 }
 
 export const matFromJSON = ({ rows, cols, weights }) => {
   const mat = new Mat(rows, cols)
-  mat.w = new Float64Array(Object.values(weights))
+  mat.weights = new Float64Array(Object.values(weights))
   return mat
 }
 

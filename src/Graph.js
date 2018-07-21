@@ -39,20 +39,20 @@ export default class Graph {
     // pluck a row of m with index ix and return it as col vector
     const cols = m.cols
     const out = new Mat(cols, 1)
-    out.updateW((w, i) => m.w[cols * ix + i])
+    out.updateW((weight, i) => m.weights[cols * ix + i])
 
     this.forwardFunctions.push(next => ({ input, doBackprop }) => {
       if (input !== undefined) ix = input
       assert(ix >= 0 && ix < m.rows)
 
-      out.updateW((w, i) => m.w[cols * ix + i])
+      out.updateW((weight, i) => m.weights[cols * ix + i])
 
       return next(out)
     })
 
     this.backwardFunctions.unshift(next => () => {
       for (let i = 0; i < cols; i++) {
-        m.dw[cols * ix + i] += out.dw[i]
+        m.gradients[cols * ix + i] += out.gradients[i]
       }
       next()
     })
@@ -70,7 +70,10 @@ export default class Graph {
     })
 
     this.backwardFunctions.unshift(next => () => {
-      m.updateDw((dw, i) => dw + (1 - out.w[i] * out.w[i]) * out.dw[i])
+      m.updateGradients(
+        (gradient, i) =>
+          gradient + (1 - out.weights[i] * out.weights[i]) * out.gradients[i],
+      )
       next()
     })
 
@@ -88,7 +91,10 @@ export default class Graph {
 
     this.backwardFunctions.unshift(next => () => {
       // grad for z = tanh(x) is (1 - z^2)
-      m.updateDw((dw, i) => dw + out.w[i] * (1 - out.w[i]) * out.dw[i])
+      m.updateGradients(
+        (gradient, i) =>
+          gradient + out.weights[i] * (1 - out.weights[i]) * out.gradients[i],
+      )
       next()
     })
 
@@ -105,7 +111,9 @@ export default class Graph {
     })
 
     this.backwardFunctions.unshift(next => () => {
-      m.updateDw((dw, i) => (dw + m.w[i] > 0 ? out.dw[i] : 0))
+      m.updateGradients(
+        (gradient, i) => (gradient + m.weights[i] > 0 ? out.gradients[i] : 0),
+      )
       next()
     })
 
@@ -124,7 +132,7 @@ export default class Graph {
 
       let dot = 0
       for (let n = 0; n < m1.cols; n++) {
-        dot += m1.w[n + row * m1.cols] * m2.w[n * m2.cols + col]
+        dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
       }
 
       return dot
@@ -137,7 +145,7 @@ export default class Graph {
 
         let dot = 0
         for (let n = 0; n < m1.cols; n++) {
-          dot += m1.w[n + row * m1.cols] * m2.w[n * m2.cols + col]
+          dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
         }
 
         return dot
@@ -147,15 +155,15 @@ export default class Graph {
     })
 
     this.backwardFunctions.unshift(next => () => {
-      out.dw.map((b, i) => {
+      out.gradients.map((b, i) => {
         const { row, col } = out.indexToCoord(i)
 
         for (let n = 0; n < m1.cols; n++) {
           const m1i = n + row * m1.cols
           const m2i = n * m2.cols + col
 
-          m1.dw[m1i] += m2.w[m2i] * b
-          m2.dw[m2i] += m1.w[m1i] * b
+          m1.gradients[m1i] += m2.weights[m2i] * b
+          m2.gradients[m2i] += m1.weights[m1i] * b
         }
       })
       next()
@@ -166,19 +174,19 @@ export default class Graph {
   }
 
   add(m1, m2) {
-    assert(m1.w.length === m2.w.length)
+    assert(m1.weights.length === m2.weights.length)
     const out = m1.clone()
 
     this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      // out.updateW((w, index) => m1.w[index] + m2.w[index]) todo: uncomment this
-      out.updateW((w, index) => m1.w[index] + m2.w[index])
+      // out.updateW((weight, index) => m1.weights[index] + m2.weights[index]) todo: uncomment this
+      out.updateW((weight, index) => m1.weights[index] + m2.weights[index])
 
       return next(out)
     })
 
     this.backwardFunctions.unshift(next => () => {
-      updateMats((m1w, m1dw, m2w, m2dw, outw, outdw) => {
-        return [m1w, m1dw + outdw, m2w, m2dw + outdw]
+      updateMats((m1w, m1Gradient, m2w, m2Gradient, outw, outGradient) => {
+        return [m1w, m1Gradient + outGradient, m2w, m2Gradient + outGradient]
       })(m1, m2, out)
       next()
     })
@@ -187,18 +195,18 @@ export default class Graph {
   }
 
   eltmul(m1, m2) {
-    assert(m1.w.length === m2.w.length)
+    assert(m1.weights.length === m2.weights.length)
     let out = m1.clone()
 
     this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      out.updateW((w, i) => w * m2.w[i])
+      out.updateW((weight, i) => weight * m2.weights[i])
 
       return next(out)
     })
 
     this.backwardFunctions.unshift(next => () => {
-      updateMats((m1w, m1dw, m2w, m2dw, outw, outdw) => {
-        return [m1w, m2w * outdw, m2w, m1w * outdw]
+      updateMats((m1w, m1Gradient, m2w, m2Gradient, outw, outGradient) => {
+        return [m1w, m2w * outGradient, m2w, m1w * outGradient]
       })(m1, m2, out)
       next()
     })

@@ -22,11 +22,11 @@ export function predictSentence({
       // If temperature is high, logprobs will go towards zero,
       // and the softmax outputs will be more diffuse. If temperature is
       // very low, the softmax outputs will be more peaky
-      logprobs.updateW(w => w / temperature)
+      logprobs.updateW(weight => weight / temperature)
     }
     probs = softmax(logprobs)
 
-    charIndex = sample ? sampleIndex(probs.w) : maxIndex(probs.w)
+    charIndex = sample ? sampleIndex(probs.weights) : maxIndex(probs.weights)
 
     if (charIndex !== 0) sentence += textModel.indexToLetter[charIndex]
     // 0 index is END token (or is it the beginning of a new sentence?), maxCharsGen is a way to limit the max length of predictions
@@ -54,7 +54,7 @@ export function computeCost({ textModel, sentence, graph, type }) {
     // lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
     const probs = softmax(output) // compute the softmax probabilities, interpreting output as logprobs
 
-    const nextCharProbability = probs.w[nextCharIndex]
+    const nextCharProbability = probs.weights[nextCharIndex]
     // binary logarithm 0 ... 1 = -Infinity ... 1
     log2ppl -= Math.log2(nextCharProbability) // accumulate binary log prob and do smoothing
     // natural logarithm, 0 ... 1 = -Infinity ... 0
@@ -63,8 +63,8 @@ export function computeCost({ textModel, sentence, graph, type }) {
     cost -= Math.log(nextCharProbability)
 
     // write gradients into log probabilities
-    output.dw = probs.w
-    output.dw[nextCharIndex] -= 1
+    output.gradients = probs.weights
+    output.gradients[nextCharIndex] -= 1
   }
 
   /*

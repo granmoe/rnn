@@ -1,9 +1,7 @@
 # In Progress
 
 - Graph refactor
-  - TDD: Start with small functions...unit tests...build up to graph.forward
   - Update code per graph refactor...get it working...check perf
-    - rename dw -> gradients, w -> weights
     - create a cachedGradients field on Mat that tracks what stepCache currently does
     - consider restructuring Mat
 
@@ -15,7 +13,6 @@
 
 ## Inbox
 
-- Rename w -> weights and dw -> gradients
 - !!! Don't serialize input. Developer may want to pass in different input during different training sessions anyway.
 - Graph / Mat ... immut data that holds pure funcs (that return new instance of self) as opposed to classes that hold/mutate data via self-mutative funcs
 - rework Graph
@@ -27,7 +24,7 @@
 ## Restructure
 
 - [IN PROGRESS] Restructuring and improving Model
-  - [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - how does lh.o.dw = ... have any effect? So much reliance on weird side-effects...uggh
+  - [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - how does lh.o.gradients = ... have any effect? So much reliance on weird side-effects...uggh
   - Separate side-effecty stuff from pure functions. Convert as much as possible to pure functions.
     - Notate side-effects
       - forwardRNN/LSTM side-effects the passed in Graph, which is then used in Model to do backprop

@@ -21,14 +21,14 @@ export default ({
     // store this in each mat
     const s = stepCache[matName]
 
-    for (let i = 0; i < mat.w.length; i++) {
+    for (let i = 0; i < mat.weights.length; i++) {
       // rmsprop adaptive learning rate
       // TODO: Research and understand this
       // Maybe convert to adadelta
-      let mdwi = mat.dw[i]
-      // s.w[i] = prev swi * decayRate + (1 - decayRate) * dwSquared
-      // s.w[i] = decayed summed squares of gradients
-      s.w[i] = s.w[i] * decayRate + (1 - decayRate) * mdwi * mdwi
+      let mGradienti = mat.gradients[i]
+      // s.weights[i] = prev swi * decayRate + (1 - decayRate) * gradientSquared
+      // s.weights[i] = decayed summed squares of gradients
+      s.weights[i] = s.weights[i] * decayRate + (1 - decayRate) * mGradienti * mGradienti
 
       /*
         RMS of grads would be:
@@ -37,15 +37,16 @@ export default ({
       */
 
       // gradient clip
-      if (Math.abs(mdwi) > clipVal) {
-        mdwi = clipVal * Math.sign(mdwi)
+      if (Math.abs(mGradienti) > clipVal) {
+        mGradienti = clipVal * Math.sign(mGradienti)
       }
 
       // update (and regularize)
-      mat.w[i] -=
+      mat.weights[i] -=
         // divisor = (decayed RMS of grads) - regc * weight
-        (learningRate * mdwi) / Math.sqrt(s.w[i] + smoothingEpsilon) - regc * mat.w[i]
-      mat.dw[i] = 0 // reset gradients for next iteration
+        (learningRate * mGradienti) / Math.sqrt(s.weights[i] + smoothingEpsilon) -
+        regc * mat.weights[i]
+      mat.gradients[i] = 0 // reset gradients for next iteration
     }
   }
 }
