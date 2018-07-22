@@ -1,4 +1,4 @@
-// import optimize from './optimize'
+import optimize from './optimize'
 import { computeCost, predictSentence } from './forward'
 import { randInt, range } from './utils'
 
@@ -34,23 +34,18 @@ const makeTrainFunc = ({
         sentence: randomSentence,
       })
 
-      // use built up graph to compute backprop (set .gradients fields in mats)
       graph.backward()
 
-      // perform param update using gradients computed during backprop...
-      // this all seems kind of indirect...consider restructuring...
-      // looks like the purpose of gradient is just to keep track of gradients temporarily
-      // maybe do this in a functional way...generators?
-      // TODO: Get this working
-      // optimize({
-      //   graph,
-      //   learningRate,
-      //   regc,
-      //   clipVal,
-      //   decayRate,
-      //   smoothingEpsilon,
-      //   stepCache,
-      // })
+      true || // TODO OPT
+        optimize({
+          graph,
+          learningRate,
+          regc,
+          clipVal,
+          decayRate,
+          smoothingEpsilon,
+          stepCache,
+        })
 
       if (currentIteration === numIterations) {
         let argMaxPrediction, samples

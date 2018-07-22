@@ -5,9 +5,10 @@ export default class Layer {
   constructor(rows, cols) {
     this.rows = rows
     this.cols = cols
-    this.weights = new Float64Array(rows * cols)
-    this.gradients = new Float64Array(rows * cols)
-    this.cachedGradients = new Float64Array(rows * cols)
+    this.length = rows * cols
+    this.weights = new Float64Array(this.length)
+    this.gradients = new Float64Array(this.length)
+    this.cachedGradients = new Float64Array(this.length)
 
     return this
   }
@@ -31,15 +32,13 @@ export default class Layer {
 
   updateMat(func, mat) {
     mat.forEach((weight, i) => {
-      // const { row, col } = this.indexToCoord(i)
-      // mat[i] = func(weight, i, { row, col })
       mat[i] = func(weight, i, this.indexToCoord.bind(this))
     })
     return this
   }
 
-  updateCache() {
-    this.cachedGradients = new Float64Array(this.gradients)
+  resetGradients() {
+    this.gradients = new Float64Array(this.length)
   }
 
   clone() {

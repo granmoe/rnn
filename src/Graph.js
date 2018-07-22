@@ -14,7 +14,7 @@ export default class Graph {
   constructor() {
     this.forwardFunctions = []
     this.backwardFunctions = []
-    this.output = null
+    this.layers = new Set()
   }
 
   forward(input) {
@@ -25,7 +25,7 @@ export default class Graph {
     return this.forwardFunc(input)
   }
 
-  backward(input) {
+  backward() {
     if (!this.backwardFunc) {
       this.backwardFunc = composeMiddlewareFunctions(this.backwardFunctions)
     }
@@ -57,6 +57,7 @@ export default class Graph {
       next()
     })
 
+    this.layers.add(out).add(m)
     return out
   }
 
@@ -65,7 +66,6 @@ export default class Graph {
 
     this.forwardFunctions.push(next => () => {
       out.updateWeights(Math.tanh) // tanh nonlinearity
-
       return next(out)
     })
 
@@ -77,6 +77,7 @@ export default class Graph {
       next()
     })
 
+    this.layers.add(out).add(m)
     return out
   }
 
@@ -85,7 +86,6 @@ export default class Graph {
 
     this.forwardFunctions.push(next => () => {
       out.updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
-
       return next(out)
     })
 
@@ -98,6 +98,7 @@ export default class Graph {
       next()
     })
 
+    this.layers.add(out).add(m)
     return out
   }
 
@@ -117,6 +118,7 @@ export default class Graph {
       next()
     })
 
+    this.layers.add(out).add(m)
     return out
   }
 
@@ -149,6 +151,8 @@ export default class Graph {
         return dot
       })
 
+      // prettier-ignore
+      this.layers.add(out).add(m1).add(m2)
       return next(out)
     })
 
@@ -189,6 +193,8 @@ export default class Graph {
       next()
     })
 
+    // prettier-ignore
+    this.layers.add(out).add(m1).add(m2)
     return out
   }
 
@@ -209,6 +215,8 @@ export default class Graph {
       next()
     })
 
+    // prettier-ignore
+    this.layers.add(out).add(m1).add(m2)
     return out
   }
 }

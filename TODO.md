@@ -1,19 +1,29 @@
 # TODOs
 
+- OPT
 - IO
 - RNN
 
 # In Progress
 
-- Mat/optimize refactor
-  - Change Layer/Matrix back to one class...then change to obj factory...things got really slow after refactoring to multiple classes
+- Get optimize working
+  - Pass layers into optimize
+  - optimize
+    - reset gradients at end (create this method in Layer)
+
+* Mat/optimize refactor
+
+  - change layer to obj factory?
   - create a cachedGradients field on Mat that tracks what stepCache currently does
 
 # Next
 
-- Bidirectional
-- Learning rate annealing
-- Renaming
+- Maybe just have one train method on graph that runs computeCost, backward, and optimize
+- And one predict method
+
+* Bidirectional
+* Learning rate annealing
+* Renaming
 
 # Inbox
 

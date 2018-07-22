@@ -9,22 +9,21 @@ export function predictSentence({
   sample = false,
   temperature = 1,
 }) {
-  let logprobs, probs
+  let probs
   let sentence = ''
   let charIndex = 0
 
   do {
-    const output = graph.forward(charIndex, { doBackprop: false })
+    const output = graph.forward(charIndex) // output used to be called logprobs
 
-    logprobs = output
     if (temperature !== 1 && sample) {
       // Scale log probabilities by temperature and renormalize
       // If temperature is high, logprobs will go towards zero,
       // and the softmax outputs will be more diffuse. If temperature is
       // very low, the softmax outputs will be more peaky
-      logprobs.updateWeights(weight => weight / temperature)
+      output.updateWeights(weight => weight / temperature)
     }
-    probs = softmax(logprobs)
+    probs = softmax(output)
 
     charIndex = sample ? sampleIndex(probs.weights) : maxIndex(probs.weights)
 
@@ -49,9 +48,7 @@ export function computeCost({ textModel, sentence, graph, type }) {
   for (let i = 0; i < delimitedSentence.length - 1; i++) {
     const currentCharIndex = delimitedSentence[i]
     const nextCharIndex = delimitedSentence[i + 1]
-    // TODO: Why "lh?" Change this...expand out to whatever the acronym stands for if possible
-    const output = graph.forward(currentCharIndex, { doBackprop: true }) // TODO: Turn this back on eventually
-    // lh = forwardIndex(graph, model, currentCharIndex, lh, hiddenSizes, type)
+    const output = graph.forward(currentCharIndex)
     const probs = softmax(output) // compute the softmax probabilities, interpreting output as logprobs
 
     const nextCharProbability = probs.weights[nextCharIndex]

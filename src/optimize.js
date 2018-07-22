@@ -1,34 +1,18 @@
-import Layer from './Layer'
-
-// updates weights based on gradients and stepCache, then resets gradients to 0; uses gradient clipping
-// side-effects model
-export default ({
-  model,
-  learningRate,
-  regc,
-  clipVal,
-  stepCache,
-  smoothingEpsilon,
-  decayRate,
-}) => {
-  for (const [matName, mat] of Object.entries(model)) {
-    if (!(matName in stepCache)) {
-      stepCache[matName] = new Layer(mat.rows, mat.cols)
-    }
-
+// updates weights based on gradients and cachedGradients, then resets gradients to 0
+// uses gradient clipping
+export default ({ graph, learningRate, regc, clipVal, smoothingEpsilon, decayRate }) => {
+  for (let layer of graph.layers) {
     // TODO: Graph can provide an optimize method that calls this function, passing in itself?
-    // Graph needs a reference to each mat...maybe just throw each one in an array
-    // store this in each mat
-    const s = stepCache[matName]
+    const { cachedGradients, gradients, weights } = layer
 
-    for (let i = 0; i < mat.weights.length; i++) {
+    for (let i = 0; i < layer.length; i++) {
       // rmsprop adaptive learning rate
-      // TODO: Research and understand this
-      // Maybe convert to adadelta
-      let mGradienti = mat.gradients[i]
-      // s.weights[i] = prev swi * decayRate + (1 - decayRate) * gradientSquared
-      // s.weights[i] = decayed summed squares of gradients
-      s.weights[i] = s.weights[i] * decayRate + (1 - decayRate) * mGradienti * mGradienti
+      // TODO: Research and understand this, maybe convert to adadelta or another optimization method
+      let gradient = gradients[i]
+      // cachedGradients[i] = prev swi * decayRate + (1 - decayRate) * gradientSquared
+      //                    = decayed summed squares of gradients
+      cachedGradients[i] =
+        cachedGradients[i] * decayRate + (1 - decayRate) * gradient * gradient
 
       /*
         RMS of grads would be:
@@ -37,16 +21,17 @@ export default ({
       */
 
       // gradient clip
-      if (Math.abs(mGradienti) > clipVal) {
-        mGradienti = clipVal * Math.sign(mGradienti)
+      if (Math.abs(gradient) > clipVal) {
+        gradients[i] = clipVal * Math.sign(gradient)
       }
 
       // update (and regularize)
-      mat.weights[i] -=
+      weights[i] -=
         // divisor = (decayed RMS of grads) - regc * weight
-        (learningRate * mGradienti) / Math.sqrt(s.weights[i] + smoothingEpsilon) -
-        regc * mat.weights[i]
-      mat.gradients[i] = 0 // reset gradients for next iteration
+        (learningRate * gradient) / Math.sqrt(cachedGradients[i] + smoothingEpsilon) -
+        regc * weights[i]
     }
+
+    layer.resetGradients()
   }
 }
