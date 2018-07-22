@@ -1,5 +1,5 @@
 import Graph from './Graph'
-import Mat, { randMat } from './Mat'
+import Layer, { randLayer } from './Layer'
 import { softmax, maxIndex, sampleIndex } from './utils'
 
 export function predictSentence({
@@ -22,7 +22,7 @@ export function predictSentence({
       // If temperature is high, logprobs will go towards zero,
       // and the softmax outputs will be more diffuse. If temperature is
       // very low, the softmax outputs will be more peaky
-      logprobs.updateW(weight => weight / temperature)
+      logprobs.updateWeights(weight => weight / temperature)
     }
     probs = softmax(logprobs)
 
@@ -67,15 +67,6 @@ export function computeCost({ textModel, sentence, graph, type }) {
     output.gradients[nextCharIndex] -= 1
   }
 
-  /*
-    TODO BI-RNN: 
-    
-    Sum the gradients of backward/forward
-    Sum the log2ppl and cost
-
-    forward/backward both create 3 arrays: grads, log2ppl and cost
-  */
-
   const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
   return { graph, perplexity, cost }
 }
@@ -87,10 +78,10 @@ export function createLSTM(inputSize, hiddenSizes, outputSize) {
   // x is 1D column vector with observation
   const graph = new Graph()
 
-  const x = graph.rowPluck(randMat(outputSize, inputSize)) // Wil, graph.rowPluck then waits for second arg, which is the row vector of the letter at the given index
+  const x = graph.rowPluck(randLayer(outputSize, inputSize)) // Wil, graph.rowPluck then waits for second arg, which is the row vector of the letter at the given index
 
   // could maybe create these in the reduce below?
-  const hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
+  const hiddenPrevs = hiddenSizes.map(hiddenSize => new Layer(hiddenSize, 1))
   const cellPrevs = [...hiddenPrevs]
 
   const finalHidden = hiddenSizes.reduce((prevHidden, hiddenSize, index) => {
@@ -99,24 +90,30 @@ export function createLSTM(inputSize, hiddenSizes, outputSize) {
     const cellPrev = cellPrevs[index]
 
     // input gate
-    const h0 = graph.mul(randMat(hiddenSize, input.rows), input) // randMat is Wix[index] / layer['Wix']
-    const h1 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // randMat is Wih[index]
-    const inputGate = graph.sigmoid(graph.add(graph.add(h0, h1), new Mat(hiddenSize, 1))) // currentLayer.bi
+    const h0 = graph.mul(randLayer(hiddenSize, input.rows), input) // randLayer is Wix[index] / layer['Wix']
+    const h1 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // randLayer is Wih[index]
+    const inputGate = graph.sigmoid(
+      graph.add(graph.add(h0, h1), new Layer(hiddenSize, 1)),
+    ) // currentLayer.bi
 
     // forget gate
-    const h2 = graph.mul(randMat(hiddenSize, input.rows), input) // Wfx
-    const h3 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // Wfh
-    const forgetGate = graph.sigmoid(graph.add(graph.add(h2, h3), new Mat(hiddenSize, 1))) // bf
+    const h2 = graph.mul(randLayer(hiddenSize, input.rows), input) // Wfx
+    const h3 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // Wfh
+    const forgetGate = graph.sigmoid(
+      graph.add(graph.add(h2, h3), new Layer(hiddenSize, 1)),
+    ) // bf
 
     // output gate
-    const h4 = graph.mul(randMat(hiddenSize, input.rows), input) // Wox
-    const h5 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // Woh
-    const outputGate = graph.sigmoid(graph.add(graph.add(h4, h5), new Mat(hiddenSize, 1))) // bo
+    const h4 = graph.mul(randLayer(hiddenSize, input.rows), input) // Wox
+    const h5 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // Woh
+    const outputGate = graph.sigmoid(
+      graph.add(graph.add(h4, h5), new Layer(hiddenSize, 1)),
+    ) // bo
 
     // write operation on cells
-    const h6 = graph.mul(randMat(hiddenSize, input.rows), input) // Wcx
-    const h7 = graph.mul(randMat(hiddenSize, hiddenSize), hiddenPrev) // Wch
-    const cellWrite = graph.tanh(graph.add(graph.add(h6, h7), new Mat(hiddenSize, 1))) // bc
+    const h6 = graph.mul(randLayer(hiddenSize, input.rows), input) // Wcx
+    const h7 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // Wch
+    const cellWrite = graph.tanh(graph.add(graph.add(h6, h7), new Layer(hiddenSize, 1))) // bc
 
     // compute new cell activation
     const retainCell = graph.eltmul(forgetGate, cellPrev) // what do we keep from cell
@@ -129,8 +126,8 @@ export function createLSTM(inputSize, hiddenSizes, outputSize) {
 
   // output, one decoder to outputs at end
   graph.add(
-    graph.mul(randMat(outputSize, finalHidden.rows), finalHidden), // Whd
-    new Mat(outputSize, 1), // bd
+    graph.mul(randLayer(outputSize, finalHidden.rows), finalHidden), // Whd
+    new Layer(outputSize, 1), // bd
   )
 
   // return the built up graph, which has a forward function we will use to do forward prop
@@ -138,7 +135,8 @@ export function createLSTM(inputSize, hiddenSizes, outputSize) {
 }
 
 // TODO RNN
-function forwardRNN(graph, model, x, prev, hiddenSizes) {
+// prettier-ignore
+function forwardRNN(graph, model, x, prev, hiddenSizes) { // eslint-disable-line
   // forward prop for a single tick of RNN
   // model contains RNN parameters
   // x is 1D column vector with observation
@@ -148,7 +146,7 @@ function forwardRNN(graph, model, x, prev, hiddenSizes) {
 
   let hiddenPrevs
   if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hiddenSizes.map(hiddenSize => new Mat(hiddenSize, 1))
+    hiddenPrevs = hiddenSizes.map(hiddenSize => new Layer(hiddenSize, 1))
   } else {
     hiddenPrevs = prev.h
   }

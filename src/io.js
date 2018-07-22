@@ -1,5 +1,5 @@
 import makeTrainFunc from './train'
-import Mat, { randMat, matFromJSON } from './Mat'
+import Layer, { randLayer, matFromJSON } from './Layer'
 import { createLSTM } from './forward'
 
 // TODO: Should create and its child funcs be its own module?
@@ -117,51 +117,52 @@ function initRNN(inputSize, hiddenSizes, outputSize) {
   const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
-    model['Wxh' + index] = randMat(hiddenSize, prevSize, 0.08)
-    model['Whh' + index] = randMat(hiddenSize, hiddenSize, 0.08)
-    model['bhh' + index] = new Mat(hiddenSize, 1)
+    model['Wxh' + index] = randLayer(hiddenSize, prevSize, 0.08)
+    model['Whh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
+    model['bhh' + index] = new Layer(hiddenSize, 1)
   }, {})
 
   // decoder params
-  model['Whd'] = randMat(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
-  model['bd'] = new Mat(outputSize, 1)
+  model['Whd'] = randLayer(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
+  model['bd'] = new Layer(outputSize, 1)
 
   // letter embedding vectors
-  model['Wil'] = randMat(outputSize, inputSize, 0, 0.08)
+  model['Wil'] = randLayer(outputSize, inputSize, 0, 0.08)
 
   return model
 }
 
 // inputSize = letterSize, outputSize = num unique chars
-function initLSTM(inputSize, hiddenSizes, outputSize) {
+// prettier-ignore
+function initLSTM(inputSize, hiddenSizes, outputSize) { // eslint-disable-line
   return hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
     // input gate
-    model['Wix' + index] = randMat(hiddenSize, prevSize, 0.08)
-    model['Wih' + index] = randMat(hiddenSize, hiddenSize, 0.08)
-    model['bi' + index] = new Mat(hiddenSize, 1)
+    model['Wix' + index] = randLayer(hiddenSize, prevSize, 0.08)
+    model['Wih' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
+    model['bi' + index] = new Layer(hiddenSize, 1)
     // forget gate
-    model['Wfx' + index] = randMat(hiddenSize, prevSize, 0.08)
-    model['Wfh' + index] = randMat(hiddenSize, hiddenSize, 0.08)
-    model['bf' + index] = new Mat(hiddenSize, 1)
+    model['Wfx' + index] = randLayer(hiddenSize, prevSize, 0.08)
+    model['Wfh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
+    model['bf' + index] = new Layer(hiddenSize, 1)
     // output gate
-    model['Wox' + index] = randMat(hiddenSize, prevSize, 0.08)
-    model['Woh' + index] = randMat(hiddenSize, hiddenSize, 0.08)
-    model['bo' + index] = new Mat(hiddenSize, 1)
+    model['Wox' + index] = randLayer(hiddenSize, prevSize, 0.08)
+    model['Woh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
+    model['bo' + index] = new Layer(hiddenSize, 1)
 
     // cell write params
-    model['Wcx' + index] = randMat(hiddenSize, prevSize, 0.08)
-    model['Wch' + index] = randMat(hiddenSize, hiddenSize, 0.08)
-    model['bc' + index] = new Mat(hiddenSize, 1)
+    model['Wcx' + index] = randLayer(hiddenSize, prevSize, 0.08)
+    model['Wch' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
+    model['bc' + index] = new Layer(hiddenSize, 1)
 
     // TODO: Looks like these get overwritten every iteration
     // decoder params
-    model['Whd'] = randMat(outputSize, hiddenSize, 0.08)
-    model['bd'] = new Mat(outputSize, 1)
+    model['Whd'] = randLayer(outputSize, hiddenSize, 0.08)
+    model['bd'] = new Layer(outputSize, 1)
 
     // letter embedding vectors
-    model['Wil'] = randMat(outputSize, inputSize, 0.08)
+    model['Wil'] = randLayer(outputSize, inputSize, 0.08)
 
     return model
   }, {})

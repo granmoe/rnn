@@ -1,4 +1,4 @@
-import Mat from './Mat'
+import Layer from './Layer'
 
 export const updateMats = func => (...mats) => {
   // TODO (someday): Assert that all mats have same length
@@ -61,7 +61,7 @@ export function sampleIndex(weight) {
 }
 
 export function softmax(m) {
-  const out = new Mat(m.rows, m.cols) // probability volume
+  const out = new Layer(m.rows, m.cols) // probability volume
 
   const [firstW, ...remainingW] = m.weights
   let maxval = firstW
@@ -75,7 +75,7 @@ export function softmax(m) {
     s += out.weights[i]
   }
 
-  out.updateW(weight => weight / s)
+  out.updateWeights(weight => weight / s)
 
   // no backward pass here needed since we will use the computed
   // probabilities outside to set gradients directly on m

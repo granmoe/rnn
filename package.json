@@ -4,8 +4,8 @@
   "description": "A modernized version of Andrej Karpathy's recurrent-js",
   "main": "dist/index.js",
   "scripts": {
-    "compile": "BABEL_ENV=prod babel src -d dist --ignore '**/tests/**'",
-    "dev": "BABEL_ENV=dev babel --watch src -d dist --ignore '**/tests/**'",
+    "compile": "BABEL_ENV=prod babel src -d dist --ignore '**/__tests/**'",
+    "dev": "BABEL_ENV=dev babel --watch src -d dist --ignore '**/__tests/**'",
     "prepublishOnly": "npm run compile",
     "test": "jest",
     "test:watch": "jest --watch"

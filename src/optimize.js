@@ -1,4 +1,4 @@
-import Mat from './Mat'
+import Layer from './Layer'
 
 // updates weights based on gradients and stepCache, then resets gradients to 0; uses gradient clipping
 // side-effects model
@@ -13,7 +13,7 @@ export default ({
 }) => {
   for (const [matName, mat] of Object.entries(model)) {
     if (!(matName in stepCache)) {
-      stepCache[matName] = new Mat(mat.rows, mat.cols)
+      stepCache[matName] = new Layer(mat.rows, mat.cols)
     }
 
     // TODO: Graph can provide an optimize method that calls this function, passing in itself?

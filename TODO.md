@@ -1,9 +1,13 @@
+# TODOs
+
+- IO
+- RNN
+
 # In Progress
 
-- Graph refactor
-  - Update code per graph refactor...get it working...check perf
-    - create a cachedGradients field on Mat that tracks what stepCache currently does
-    - consider restructuring Mat
+- Mat/optimize refactor
+  - Change Layer/Matrix back to one class...then change to obj factory...things got really slow after refactoring to multiple classes
+  - create a cachedGradients field on Mat that tracks what stepCache currently does
 
 # Next
 
@@ -11,7 +15,7 @@
 - Learning rate annealing
 - Renaming
 
-## Inbox
+# Inbox
 
 - !!! Don't serialize input. Developer may want to pass in different input during different training sessions anyway.
 - Graph / Mat ... immut data that holds pure funcs (that return new instance of self) as opposed to classes that hold/mutate data via self-mutative funcs
@@ -21,7 +25,7 @@
 - Output epoch so caller can anneal learning rate per epoch if desired
   - Verify decayRate functionality
 
-## Restructure
+# Restructure
 
 - [IN PROGRESS] Restructuring and improving Model
   - [IN PROGRESS] costFunc -> forwardIndex -> forwardRNN / LSTM (prev?) - how does lh.o.gradients = ... have any effect? So much reliance on weird side-effects...uggh
@@ -31,15 +35,15 @@
       - forwardRNN/LSTM side-effects prev.c, prev.h
       - optimize side-effects passed in stepCache...maybe just make immutable
 
-## Data Augmentation
+# Data Augmentation
 
 - Train a model, then get tons of samples, then run through grammarly (or equivalent), then add to haiku data
 
-## Bugs
+# Bugs
 
 - If charCountThreshold is > 1, need to filter out excluded chars from input sentences, otherwise shit blows up (text model doesn't have all the chars that are in input). I.e., filter input to include only chars in text model.
 
-## Ideas
+# Ideas
 
 - Bidirectional RNN: https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/191dd7df9cb91ac22f56ed0dfa4a5651e8767a51/2-Figure2-1.png
 - functions (or generators?) and object factories instead of classes

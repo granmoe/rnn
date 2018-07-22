@@ -1,4 +1,4 @@
-import optimize from './optimize'
+// import optimize from './optimize'
 import { computeCost, predictSentence } from './forward'
 import { randInt, range } from './utils'
 
@@ -35,7 +35,6 @@ const makeTrainFunc = ({
       })
 
       // use built up graph to compute backprop (set .gradients fields in mats)
-      // TODO NEXT: Fix this
       graph.backward()
 
       // perform param update using gradients computed during backprop...

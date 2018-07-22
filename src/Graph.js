@@ -1,5 +1,5 @@
 import { assert, updateMats } from './utils'
-import Mat from './Mat'
+import Layer from './Layer'
 
 const identityFunc = a => a
 
@@ -38,14 +38,14 @@ export default class Graph {
     // need to have an arbitrary starting index to populate first output mat of this
     // pluck a row of m with index ix and return it as col vector
     const cols = m.cols
-    const out = new Mat(cols, 1)
-    out.updateW((weight, i) => m.weights[cols * ix + i])
+    const out = new Layer(cols, 1)
+    out.updateWeights((_weight, i) => m.weights[cols * ix + i])
 
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
+    this.forwardFunctions.push(next => ({ input }) => {
       if (input !== undefined) ix = input
       assert(ix >= 0 && ix < m.rows)
 
-      out.updateW((weight, i) => m.weights[cols * ix + i])
+      out.updateWeights((_weight, i) => m.weights[cols * ix + i])
 
       return next(out)
     })
@@ -63,8 +63,8 @@ export default class Graph {
   tanh(m) {
     const out = m.clone()
 
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      out.updateW(Math.tanh) // tanh nonlinearity
+    this.forwardFunctions.push(next => () => {
+      out.updateWeights(Math.tanh) // tanh nonlinearity
 
       return next(out)
     })
@@ -83,8 +83,8 @@ export default class Graph {
   sigmoid(m) {
     const out = m.clone()
 
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      out.updateW(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
+    this.forwardFunctions.push(next => () => {
+      out.updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
 
       return next(out)
     })
@@ -104,8 +104,8 @@ export default class Graph {
   relu(m) {
     const out = m.clone()
 
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      out.updateW(Math.max.bind(null, 0)) // sigmoid nonlinearity
+    this.forwardFunctions.push(next => () => {
+      out.updateWeights(Math.max.bind(null, 0)) // sigmoid nonlinearity
 
       return next(out)
     })
@@ -127,9 +127,8 @@ export default class Graph {
     // FIXME: How to make each graph op able to be used as first graph op in graph?
     // e.g. if not all args are there because there is no input yet
     // create placeholder input or something? Or sample first training example?
-    const out = new Mat(m1.rows, m2.cols).updateW((_, i, mat) => {
-      const { row, col } = mat.indexToCoord(i)
-
+    const out = new Layer(m1.rows, m2.cols).updateWeights((_weight, i, indexToCoord) => {
+      const { row, col } = indexToCoord(i)
       let dot = 0
       for (let n = 0; n < m1.cols; n++) {
         dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
@@ -139,10 +138,9 @@ export default class Graph {
     })
 
     // out = dot product of m1 and m2
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      out.updateW((_, i, mat) => {
-        const { row, col } = mat.indexToCoord(i)
-
+    this.forwardFunctions.push(next => () => {
+      out.updateWeights((_weight, i, indexToCoord) => {
+        const { row, col } = indexToCoord(i)
         let dot = 0
         for (let n = 0; n < m1.cols; n++) {
           dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
@@ -169,7 +167,7 @@ export default class Graph {
       next()
     })
 
-    // TODO NOW: The issue is that mul immediately returns a zero mat
+    // TODO: The issue is that mul immediately returns a zero mat
     return out
   }
 
@@ -177,9 +175,9 @@ export default class Graph {
     assert(m1.weights.length === m2.weights.length)
     const out = m1.clone()
 
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      // out.updateW((weight, index) => m1.weights[index] + m2.weights[index]) todo: uncomment this
-      out.updateW((weight, index) => m1.weights[index] + m2.weights[index])
+    this.forwardFunctions.push(next => () => {
+      // out.updateWeights((weight, index) => m1.weights[index] + m2.weights[index]) todo: uncomment this
+      out.updateWeights((weight, index) => m1.weights[index] + m2.weights[index])
 
       return next(out)
     })
@@ -198,8 +196,8 @@ export default class Graph {
     assert(m1.weights.length === m2.weights.length)
     let out = m1.clone()
 
-    this.forwardFunctions.push(next => ({ input, doBackprop }) => {
-      out.updateW((weight, i) => weight * m2.weights[i])
+    this.forwardFunctions.push(next => () => {
+      out.updateWeights((weight, i) => weight * m2.weights[i])
 
       return next(out)
     })
