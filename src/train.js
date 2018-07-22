@@ -36,16 +36,15 @@ const makeTrainFunc = ({
 
       graph.backward()
 
-      true || // TODO OPT
-        optimize({
-          graph,
-          learningRate,
-          regc,
-          clipVal,
-          decayRate,
-          smoothingEpsilon,
-          stepCache,
-        })
+      optimize({
+        graph,
+        learningRate,
+        regc,
+        clipVal,
+        decayRate,
+        smoothingEpsilon,
+        stepCache,
+      })
 
       if (currentIteration === numIterations) {
         let argMaxPrediction, samples

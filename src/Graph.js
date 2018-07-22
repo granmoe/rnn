@@ -41,7 +41,7 @@ export default class Graph {
     const out = new Layer(cols, 1)
     out.updateWeights((_weight, i) => m.weights[cols * ix + i])
 
-    this.forwardFunctions.push(next => ({ input }) => {
+    this.forwardFunctions.push(next => input => {
       if (input !== undefined) ix = input
       assert(ix >= 0 && ix < m.rows)
 

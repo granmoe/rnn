@@ -46,14 +46,14 @@ export const maxIndex = weights =>
     )
 
 // sample argmax from weight, assuming weight are probabilities that sum to one
-export function sampleIndex(weight) {
+export function sampleIndex(weights) {
   // TODO: Variable names here suck
   const r = randFloat(0, 1) // max value up to, but not including, 1
   let x = 0
   let i = 0
 
   while (x <= r) {
-    x += weight[i]
+    x += weights[i]
     i++
   }
 
