@@ -171,7 +171,6 @@ export default class Graph {
       next()
     })
 
-    // TODO: The issue is that mul immediately returns a zero mat
     return out
   }
 
@@ -180,14 +179,13 @@ export default class Graph {
     const out = m1.clone()
 
     this.forwardFunctions.push(next => () => {
-      // out.updateWeights((weight, index) => m1.weights[index] + m2.weights[index]) todo: uncomment this
-      out.updateWeights((weight, index) => m1.weights[index] + m2.weights[index])
+      out.updateWeights((_weight, index) => m1.weights[index] + m2.weights[index])
 
       return next(out)
     })
 
     this.backwardFunctions.unshift(next => () => {
-      updateMats((m1w, m1Gradient, m2w, m2Gradient, outw, outGradient) => {
+      updateMats((m1w, m1Gradient, m2w, m2Gradient, _outw, outGradient) => {
         return [m1w, m1Gradient + outGradient, m2w, m2Gradient + outGradient]
       })(m1, m2, out)
       next()
@@ -209,7 +207,7 @@ export default class Graph {
     })
 
     this.backwardFunctions.unshift(next => () => {
-      updateMats((m1w, m1Gradient, m2w, m2Gradient, outw, outGradient) => {
+      updateMats((m1w, _m1Gradient, m2w, _m2Gradient, _outw, outGradient) => {
         return [m1w, m2w * outGradient, m2w, m1w * outGradient]
       })(m1, m2, out)
       next()
