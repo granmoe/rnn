@@ -34,17 +34,14 @@ export function predictSentence({
   return sentence
 }
 
-// calculates loss of model on a given sentence and returns graph to be used for backprop
-// graph.runBackprop side-effects model via closures
-export function computeCost({ textModel, sentence, graph, type }) {
+// calculates perplexity and loss of model on a given sentence
+export function computeCost({ textModel, sentence, graph }) {
   let log2ppl = 0
   let cost = 0
   const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
   let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
 
-  // TODO: Maybe someday I can change this back to my pretty, customer iterator :(
-  // But for now, for...of is just too damn slow
-  // for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) {
+  // could be: for (let [currentCharIndex, nextCharIndex] of slidingWindow(2, delimitedSentence)) { // except this is really damn slow
   for (let i = 0; i < delimitedSentence.length - 1; i++) {
     const currentCharIndex = delimitedSentence[i]
     const nextCharIndex = delimitedSentence[i + 1]
@@ -65,7 +62,7 @@ export function computeCost({ textModel, sentence, graph, type }) {
   }
 
   const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
-  return { graph, perplexity, cost }
+  return { perplexity, cost }
 }
 
 // TODO: Grab declarations of mats from create model and merge them into here

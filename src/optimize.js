@@ -22,14 +22,16 @@ export default ({ graph, learningRate, regc, clipVal, smoothingEpsilon, decayRat
 
       // gradient clip
       if (Math.abs(gradient) > clipVal) {
+        // this used to be mdwi = ... which would cancel out the grad clipping
         gradients[i] = clipVal * Math.sign(gradient)
       }
 
       // update (and regularize)
-      weights[i] -=
-        // divisor = (decayed RMS of grads) - regc * weight
+      // divisor = (decayed RMS of grads) - regc * weight
+      const step =
         (learningRate * gradient) / Math.sqrt(cachedGradients[i] + smoothingEpsilon) -
         regc * weights[i]
+      weights[i] -= step
     }
 
     layer.resetGradients()

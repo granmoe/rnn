@@ -7,6 +7,8 @@
 # In Progress
 
 - Get optimize working
+  - graph always predicts char index 0 if backprop and optimization are on
+    - gradients must be getting set wrong
   - Pass layers into optimize
   - optimize
     - reset gradients at end (create this method in Layer)
