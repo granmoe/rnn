@@ -57,7 +57,7 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(out).add(m)
+    this.layers.add(m)
     return out
   }
 
@@ -77,7 +77,7 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(out).add(m)
+    this.layers.add(m)
     return out
   }
 
@@ -98,7 +98,7 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(out).add(m)
+    this.layers.add(m)
     return out
   }
 
@@ -118,7 +118,7 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(out).add(m)
+    this.layers.add(m)
     return out
   }
 
@@ -151,8 +151,6 @@ export default class Graph {
         return dot
       })
 
-      // prettier-ignore
-      this.layers.add(out).add(m1).add(m2)
       return next(out)
     })
 
@@ -171,6 +169,7 @@ export default class Graph {
       next()
     })
 
+    this.layers.add(m1).add(m2)
     return out
   }
 
@@ -191,8 +190,7 @@ export default class Graph {
       next()
     })
 
-    // prettier-ignore
-    this.layers.add(out).add(m1).add(m2)
+    this.layers.add(m1).add(m2)
     return out
   }
 
@@ -213,8 +211,7 @@ export default class Graph {
       next()
     })
 
-    // prettier-ignore
-    this.layers.add(out).add(m1).add(m2)
+    this.layers.add(m1).add(m2)
     return out
   }
 }

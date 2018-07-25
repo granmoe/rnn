@@ -9,9 +9,12 @@
 - Get optimize working
   - graph always predicts char index 0 if backprop and optimization are on
     - gradients must be getting set wrong
-  - Pass layers into optimize
-  - optimize
-    - reset gradients at end (create this method in Layer)
+      - !!! Grads getting set wrong because in master lh.o is new every time forward is run
+  - original version created backprop funcs for each forward run
+    - backprop for each run uses different temp mats
+    - backprop needs to be different for each forward run so that it backprops the output char
+    - maybe just backprop between each character
+  - !!! Run forward/backward/optimize completely on each character
 
 * Mat/optimize refactor
 
