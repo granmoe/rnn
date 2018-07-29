@@ -13,7 +13,7 @@ export function create({
   // OPTIMIZATION HYPER PARAMS
   regc = 0.000001, // L2 regularization strength
   clipVal = 5, // clip gradients at this value
-  decayRate = 0.9,
+  decayRate = 0.994,
   smoothingEpsilon = 1e-8, // to avoid division by zero
   // these are only passed in when restarting a saved model
   stepCache = {},

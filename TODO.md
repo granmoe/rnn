@@ -15,6 +15,12 @@
     - backprop needs to be different for each forward run so that it backprops the output char
     - maybe just backprop between each character
   - !!! Run forward/backward/optimize completely on each character
+    - Could predictSentence be side-effecting output weights?
+    - Grads explode as you go back
+      - Check if this happens on master
+- Then merge optimize -> graph-rewrite -> master
+- Are long-range dependencies still working with this refactor? Compare to performance of master
+  - ppl seems to be really bad
 
 * Mat/optimize refactor
 

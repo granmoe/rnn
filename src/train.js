@@ -1,6 +1,6 @@
 import optimize from './optimize'
-import { computeCost, predictSentence } from './forward'
-import { randInt, range } from './utils'
+import { predictSentence } from './forward'
+import { softmax, randInt, range } from './utils'
 
 // make a train function that closes around a given graph instance and its params
 const makeTrainFunc = ({
@@ -10,7 +10,6 @@ const makeTrainFunc = ({
   clipVal,
   decayRate,
   smoothingEpsilon,
-  stepCache,
   totalIterations,
   graph,
   textModel,
@@ -27,23 +26,16 @@ const makeTrainFunc = ({
 
       const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
 
-      const { perplexity, cost } = computeCost({
+      const { perplexity, cost } = train({
         graph,
-        type,
-        textModel,
-        sentence: randomSentence,
-      })
-
-      graph.backward()
-
-      optimize({
-        graph,
-        learningRate,
         regc,
         clipVal,
         decayRate,
         smoothingEpsilon,
-        stepCache,
+        learningRate,
+        type,
+        textModel,
+        sentence: randomSentence,
       })
 
       if (currentIteration === numIterations) {
@@ -85,3 +77,53 @@ const makeTrainFunc = ({
 }
 
 export default makeTrainFunc
+
+// Runs forward, backward, and optimize char by char for a full sample (sentence)
+export function train({
+  textModel,
+  sentence,
+  graph,
+  learningRate,
+  regc,
+  clipVal,
+  decayRate,
+  smoothingEpsilon,
+}) {
+  let log2ppl = 0
+  let cost = 0
+  const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
+  let delimitedSentence = [0, ...sentenceIndices, 0] // start and end tokens are zeros
+
+  for (let i = 0; i < delimitedSentence.length - 1; i++) {
+    const currentCharIndex = delimitedSentence[i]
+    const nextCharIndex = delimitedSentence[i + 1]
+    const output = graph.forward(currentCharIndex)
+    const probs = softmax(output) // compute the softmax probabilities, interpreting output as logprobs
+
+    const nextCharProbability = probs.weights[nextCharIndex]
+    // binary logarithm 0 ... 1 = -Infinity ... 1
+    log2ppl -= Math.log2(nextCharProbability) // accumulate binary log prob and do smoothing
+    // natural logarithm, 0 ... 1 = -Infinity ... 0
+    // since softmax will be between 0 and 1 exclusive, cost will always be negative
+    // high prob = low cost, low prob = high cost
+    cost -= Math.log(nextCharProbability)
+
+    // write gradients into log probabilities
+    output.gradients = probs.weights
+    output.gradients[nextCharIndex] -= 1
+
+    graph.backward()
+
+    optimize({
+      graph,
+      learningRate,
+      regc,
+      clipVal,
+      decayRate,
+      smoothingEpsilon,
+    })
+  }
+
+  const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
+  return { perplexity, cost }
+}
