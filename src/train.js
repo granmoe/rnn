@@ -17,7 +17,7 @@ const makeTrainFunc = ({
   return ({
     numIterations = 1,
     temperature = 1, // how peaky model predictions should be
-    learningRate = 0.01,
+    learningRate = 0.0008,
     maxCharsGen,
     sampleFrequency = null, // how often to return samples and argmax (don't sample if not a number > 1)
   } = {}) => {
