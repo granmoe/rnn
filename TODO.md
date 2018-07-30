@@ -6,7 +6,8 @@
 
 # In Progress
 
-- merge graph-rewrite -> master
+- get predictSentence working again
+- then merge graph-rewrite -> master
 
 - Mat/optimize refactor
   - change layer to obj factory?
