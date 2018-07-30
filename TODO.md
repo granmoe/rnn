@@ -10,10 +10,6 @@ Master
 new graph each train iter
 new forward/backward funcs/mats each letter, except for model mats
 
-Maybe differentiating cell state is to blame?
-
-grad funcs may accumulating grads for all layers (assuming sentence at a time instead of character)
-
 - Get optimize working
   - graph always predicts char index 0 if backprop and optimization are on
     - gradients must be getting set wrong
