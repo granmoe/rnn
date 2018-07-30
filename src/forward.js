@@ -35,7 +35,8 @@ export function predictSentence({
 }
 
 // calculates perplexity and loss of model on a given sentence
-export function computeCost({ textModel, sentence, graph }) {
+export function computeCost({ textModel, sentence, forwardLSTM }) {
+  const graph = new Graph()
   let log2ppl = 0
   let cost = 0
   const sentenceIndices = Array.from(sentence).map(c => textModel.letterToIndex[c])
@@ -45,7 +46,7 @@ export function computeCost({ textModel, sentence, graph }) {
   for (let i = 0; i < delimitedSentence.length - 1; i++) {
     const currentCharIndex = delimitedSentence[i]
     const nextCharIndex = delimitedSentence[i + 1]
-    const output = graph.forward(currentCharIndex)
+    const output = forwardLSTM(currentCharIndex, graph)
     const probs = softmax(output) // compute the softmax probabilities, interpreting output as logprobs
 
     const nextCharProbability = probs.weights[nextCharIndex]
@@ -62,52 +63,78 @@ export function computeCost({ textModel, sentence, graph }) {
   }
 
   const perplexity = Math.pow(2, log2ppl / (sentence.length - 1))
-  return { perplexity, cost }
+  return { perplexity, cost, graph, model }
 }
 
-// TODO: Grab declarations of mats from create model and merge them into here
-// Won't need to pass any args into here...except maybe hiddenSizes (are those on model?)
-export function createLSTM(inputSize, hiddenSizes, outputSize) {
-  // forward prop for a single tick of LSTM, model contains LSTM parameters
-  // x is 1D column vector with observation
-  const graph = new Graph()
+const model = {
+  layers: {},
+  layer(name, initialValue) {
+    if (!this.layers[name]) {
+      this.layers[name] = initialValue
+    }
+    return this.layers[name]
+  },
+}
 
-  const x = graph.rowPluck(randLayer(outputSize, inputSize)) // Wil, graph.rowPluck then waits for second arg, which is the row vector of the letter at the given index
-
-  // could maybe create these in the reduce below?
-  const hiddenPrevs = hiddenSizes.map(hiddenSize => new Layer(hiddenSize, 1))
-  const cellPrevs = [...hiddenPrevs]
+export const makeForwardLSTM = (inputSize, hiddenSizes, outputSize) => (index, graph) => {
+  const x = graph.rowPluck(model.layer('Wil', randLayer(outputSize, inputSize)), index)
 
   const finalHidden = hiddenSizes.reduce((prevHidden, hiddenSize, index) => {
     const input = prevHidden || x // output of last layer (but first layer takes input)
-    const hiddenPrev = hiddenPrevs[index]
-    const cellPrev = cellPrevs[index]
+    const hiddenPrev = model.layer('hiddenPrev' + index, new Layer(hiddenSize, 1))
+    const cellPrev = model.layer('cellPrev' + index, new Layer(hiddenSize, 1))
 
     // input gate
-    const h0 = graph.mul(randLayer(hiddenSize, input.rows), input) // randLayer is Wix[index] / layer['Wix']
-    const h1 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // randLayer is Wih[index]
+    const h0 = graph.mul(
+      model.layer('Wix' + index, randLayer(hiddenSize, input.rows)),
+      input,
+    )
+    const h1 = graph.mul(
+      model.layer('Wih' + index, randLayer(hiddenSize, hiddenSize)),
+      hiddenPrev,
+    )
     const inputGate = graph.sigmoid(
-      graph.add(graph.add(h0, h1), new Layer(hiddenSize, 1)),
-    ) // currentLayer.bi
+      graph.add(graph.add(h0, h1), model.layer('bi' + index, new Layer(hiddenSize, 1))),
+    )
 
     // forget gate
-    const h2 = graph.mul(randLayer(hiddenSize, input.rows), input) // Wfx
-    const h3 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // Wfh
+    const h2 = graph.mul(
+      model.layer('Wfx' + index, randLayer(hiddenSize, input.rows)),
+      input,
+    )
+    const h3 = graph.mul(
+      model.layer('Wfh' + index, randLayer(hiddenSize, hiddenSize)),
+      hiddenPrev,
+    )
     const forgetGate = graph.sigmoid(
-      graph.add(graph.add(h2, h3), new Layer(hiddenSize, 1)),
-    ) // bf
+      graph.add(graph.add(h2, h3), model.layer('bf' + index, new Layer(hiddenSize, 1))),
+    )
 
     // output gate
-    const h4 = graph.mul(randLayer(hiddenSize, input.rows), input) // Wox
-    const h5 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // Woh
+    const h4 = graph.mul(
+      model.layer('Wox' + index, randLayer(hiddenSize, input.rows)),
+      input,
+    )
+    const h5 = graph.mul(
+      model.layer('Woh' + index, randLayer(hiddenSize, hiddenSize)),
+      hiddenPrev,
+    )
     const outputGate = graph.sigmoid(
-      graph.add(graph.add(h4, h5), new Layer(hiddenSize, 1)),
-    ) // bo
+      graph.add(graph.add(h4, h5), model.layer('bo' + index, new Layer(hiddenSize, 1))),
+    )
 
     // write operation on cells
-    const h6 = graph.mul(randLayer(hiddenSize, input.rows), input) // Wcx
-    const h7 = graph.mul(randLayer(hiddenSize, hiddenSize), hiddenPrev) // Wch
-    const cellWrite = graph.tanh(graph.add(graph.add(h6, h7), new Layer(hiddenSize, 1))) // bc
+    const h6 = graph.mul(
+      model.layer('Wcx' + index, randLayer(hiddenSize, input.rows)),
+      input,
+    )
+    const h7 = graph.mul(
+      model.layer('Wch' + index, randLayer(hiddenSize, hiddenSize)),
+      hiddenPrev,
+    )
+    const cellWrite = graph.tanh(
+      graph.add(graph.add(h6, h7), model.layer('bc' + index, new Layer(hiddenSize, 1))),
+    )
 
     // compute new cell activation
     const retainCell = graph.eltmul(forgetGate, cellPrev) // what do we keep from cell
@@ -119,13 +146,13 @@ export function createLSTM(inputSize, hiddenSizes, outputSize) {
   }, null)
 
   // output, one decoder to outputs at end
-  graph.add(
-    graph.mul(randLayer(outputSize, finalHidden.rows), finalHidden), // Whd
-    new Layer(outputSize, 1), // bd
+  return graph.add(
+    graph.mul(
+      model.layer('Whd' + index, randLayer(outputSize, finalHidden.rows)),
+      finalHidden,
+    ),
+    model.layer('bd' + index, new Layer(outputSize, 1)),
   )
-
-  // return the built up graph, which has a forward function we will use to do forward prop
-  return graph
 }
 
 // TODO RNN

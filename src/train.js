@@ -12,7 +12,7 @@ const makeTrainFunc = ({
   smoothingEpsilon,
   stepCache,
   totalIterations,
-  graph,
+  graph: forwardLSTM,
   textModel,
 }) => {
   return ({
@@ -27,9 +27,9 @@ const makeTrainFunc = ({
 
       const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
 
-      const { perplexity, cost } = computeCost({
-        graph,
-        type,
+      const { perplexity, cost, graph, model } = computeCost({
+        forwardLSTM,
+        // type,
         textModel,
         sentence: randomSentence,
       })
@@ -37,7 +37,7 @@ const makeTrainFunc = ({
       graph.backward()
 
       optimize({
-        graph,
+        model,
         learningRate,
         regc,
         clipVal,

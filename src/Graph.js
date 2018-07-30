@@ -14,15 +14,6 @@ export default class Graph {
   constructor() {
     this.forwardFunctions = []
     this.backwardFunctions = []
-    this.layers = new Set()
-  }
-
-  forward(input) {
-    if (!this.forwardFunc) {
-      this.forwardFunc = composeMiddlewareFunctions(this.forwardFunctions)
-    }
-
-    return this.forwardFunc(input)
   }
 
   backward() {
@@ -33,41 +24,24 @@ export default class Graph {
     this.backwardFunc()
   }
 
-  rowPluck(m, ix = 0) {
-    // TODO: Make sure setting this to 0 doesn't cause any weird side-effects
-    // need to have an arbitrary starting index to populate first output mat of this
-    // pluck a row of m with index ix and return it as col vector
+  rowPluck(m, index) {
+    // pluck a row of m with index index and return it as col vector
     const cols = m.cols
     const out = new Layer(cols, 1)
-    out.updateWeights((_weight, i) => m.weights[cols * ix + i])
-
-    this.forwardFunctions.push(next => input => {
-      if (input !== undefined) ix = input
-      assert(ix >= 0 && ix < m.rows)
-
-      out.updateWeights((_weight, i) => m.weights[cols * ix + i])
-
-      return next(out)
-    })
+    out.updateWeights((_weight, i) => m.weights[cols * index + i])
 
     this.backwardFunctions.unshift(next => () => {
       for (let i = 0; i < cols; i++) {
-        m.gradients[cols * ix + i] += out.gradients[i]
+        m.gradients[cols * index + i] += out.gradients[i]
       }
       next()
     })
 
-    this.layers.add(m)
     return out
   }
 
   tanh(m) {
-    const out = m.clone()
-
-    this.forwardFunctions.push(next => () => {
-      out.updateWeights(Math.tanh) // tanh nonlinearity
-      return next(out)
-    })
+    const out = m.clone().updateWeights(Math.tanh) // tanh nonlinearity
 
     this.backwardFunctions.unshift(next => () => {
       m.updateGradients(
@@ -77,17 +51,11 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(m)
     return out
   }
 
   sigmoid(m) {
-    const out = m.clone()
-
-    this.forwardFunctions.push(next => () => {
-      out.updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
-      return next(out)
-    })
+    const out = m.clone().updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
 
     this.backwardFunctions.unshift(next => () => {
       // grad for z = tanh(x) is (1 - z^2)
@@ -98,18 +66,11 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(m)
     return out
   }
 
   relu(m) {
-    const out = m.clone()
-
-    this.forwardFunctions.push(next => () => {
-      out.updateWeights(Math.max.bind(null, 0)) // sigmoid nonlinearity
-
-      return next(out)
-    })
+    const out = m.clone().updateWeights(Math.max.bind(null, 0)) // sigmoid nonlinearity
 
     this.backwardFunctions.unshift(next => () => {
       m.updateGradients(
@@ -118,17 +79,13 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(m)
     return out
   }
 
   mul(m1, m2) {
-    // TODO: What if second is based on input result? Caller just has to pass it in
     assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
-    // Need to return something on first call
-    // FIXME: How to make each graph op able to be used as first graph op in graph?
-    // e.g. if not all args are there because there is no input yet
-    // create placeholder input or something? Or sample first training example?
+
+    // out = dot product of m1 and m2
     const out = new Layer(m1.rows, m2.cols).updateWeights((_weight, i, indexToCoord) => {
       const { row, col } = indexToCoord(i)
       let dot = 0
@@ -137,21 +94,6 @@ export default class Graph {
       }
 
       return dot
-    })
-
-    // out = dot product of m1 and m2
-    this.forwardFunctions.push(next => () => {
-      out.updateWeights((_weight, i, indexToCoord) => {
-        const { row, col } = indexToCoord(i)
-        let dot = 0
-        for (let n = 0; n < m1.cols; n++) {
-          dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
-        }
-
-        return dot
-      })
-
-      return next(out)
     })
 
     this.backwardFunctions.unshift(next => () => {
@@ -169,19 +111,14 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(m1).add(m2)
     return out
   }
 
   add(m1, m2) {
     assert(m1.weights.length === m2.weights.length)
-    const out = m1.clone()
-
-    this.forwardFunctions.push(next => () => {
-      out.updateWeights((_weight, index) => m1.weights[index] + m2.weights[index])
-
-      return next(out)
-    })
+    const out = m1
+      .clone()
+      .updateWeights((_weight, index) => m1.weights[index] + m2.weights[index])
 
     this.backwardFunctions.unshift(next => () => {
       updateMats((m1w, m1Gradient, m2w, m2Gradient, _outw, outGradient) => {
@@ -190,19 +127,12 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(m1).add(m2)
     return out
   }
 
   eltmul(m1, m2) {
     assert(m1.weights.length === m2.weights.length)
-    let out = m1.clone()
-
-    this.forwardFunctions.push(next => () => {
-      out.updateWeights((weight, i) => weight * m2.weights[i])
-
-      return next(out)
-    })
+    let out = m1.clone().updateWeights((weight, i) => weight * m2.weights[i])
 
     this.backwardFunctions.unshift(next => () => {
       updateMats((m1w, _m1Gradient, m2w, _m2Gradient, _outw, outGradient) => {
@@ -211,7 +141,6 @@ export default class Graph {
       next()
     })
 
-    this.layers.add(m1).add(m2)
     return out
   }
 }

@@ -1,6 +1,6 @@
 import makeTrainFunc from './train'
 import Layer, { randLayer, matFromJSON } from './Layer'
-import { createLSTM } from './forward'
+import { makeForwardLSTM } from './forward'
 
 // TODO: Should create and its child funcs be its own module?
 export function create({
@@ -13,7 +13,7 @@ export function create({
   // OPTIMIZATION HYPER PARAMS
   regc = 0.000001, // L2 regularization strength
   clipVal = 5, // clip gradients at this value
-  decayRate = 0.99,
+  decayRate = 0.9,
   smoothingEpsilon = 1e-8, // to avoid division by zero
   // these are only passed in when restarting a saved model
   stepCache = {},
@@ -77,7 +77,7 @@ function createModels({ type, hiddenSizes, letterSize, input, charCountThreshold
   if (type === 'rnn') {
     model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
   } else {
-    model = createLSTM(letterSize, hiddenSizes, textModel.inputSize)
+    model = makeForwardLSTM(letterSize, hiddenSizes, textModel.inputSize)
   }
 
   return { model, textModel }
