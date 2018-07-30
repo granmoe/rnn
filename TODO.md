@@ -6,6 +6,12 @@
 
 # In Progress
 
+Master
+new graph each train iter
+new forward/backward funcs/mats each letter, except for model mats
+
+need to simulate building graph for each sentence
+
 - Get optimize working
   - graph always predicts char index 0 if backprop and optimization are on
     - gradients must be getting set wrong
@@ -15,6 +21,15 @@
     - backprop needs to be different for each forward run so that it backprops the output char
     - maybe just backprop between each character
   - !!! Run forward/backward/optimize completely on each character
+    - Could predictSentence be side-effecting output weights?
+    - Grads explode as you go back
+      - Check if this happens on master
+    - Try switching back to sentence at a time (does it matter that output is same mat? diff than master)
+    * Try putting grad clip before cached grads
+    * Try smaller learning rate
+- Then merge optimize -> graph-rewrite -> master
+- Are long-range dependencies still working with this refactor? Compare to performance of master
+  - ppl seems to be really bad
 
 * Mat/optimize refactor
 
