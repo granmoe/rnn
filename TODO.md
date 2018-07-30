@@ -10,6 +10,8 @@ Master
 new graph each train iter
 new forward/backward funcs/mats each letter, except for model mats
 
+need to simulate building graph for each sentence
+
 - Get optimize working
   - graph always predicts char index 0 if backprop and optimization are on
     - gradients must be getting set wrong
