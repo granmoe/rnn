@@ -1,6 +1,5 @@
 import optimize from './optimize'
-import { computeCost, predictSentence } from './forward'
-import { randInt, range } from './utils'
+import { range } from './utils'
 
 // make a train function that closes around a given graph instance and its params
 const makeTrainFunc = ({
@@ -10,9 +9,8 @@ const makeTrainFunc = ({
   clipVal,
   decayRate,
   smoothingEpsilon,
-  stepCache,
   totalIterations,
-  graph: forwardLSTM,
+  model: { forward, backward, layers, predict },
   textModel,
 }) => {
   return ({
@@ -25,47 +23,32 @@ const makeTrainFunc = ({
     for (const currentIteration of range(1, numIterations)) {
       totalIterations += 1
 
-      const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
-
-      const { perplexity, cost, graph, model } = computeCost({
-        forwardLSTM,
-        // type,
-        textModel,
-        sentence: randomSentence,
-      })
-
-      graph.backward()
-
+      const { perplexity, cost } = forward()
+      backward()
       optimize({
-        model,
+        layers,
         learningRate,
         regc,
         clipVal,
         decayRate,
         smoothingEpsilon,
-        stepCache,
       })
 
       if (currentIteration === numIterations) {
         let argMaxPrediction, samples
+
         if (sampleFrequency && totalIterations % sampleFrequency === 0) {
-          argMaxPrediction = predictSentence({
-            type,
-            graph,
-            textModel,
-            hiddenSizes,
+          argMaxPrediction = predict({
             sample: false,
+            textModel,
             temperature,
             maxCharsGen,
           })
 
           samples = Array.from({ length: 3 }, () =>
-            predictSentence({
-              type,
-              graph,
-              textModel,
-              hiddenSizes,
+            predict({
               sample: true,
+              textModel,
               temperature,
               maxCharsGen,
             }),

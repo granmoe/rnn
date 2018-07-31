@@ -1,6 +1,8 @@
 import makeTrainFunc from './train'
-import Layer, { randLayer, matFromJSON } from './Layer'
-import { makeForwardLSTM } from './forward'
+import Layer, { randLayer } from './Layer'
+import { computeCost, makeForwardLSTM, predictSentence } from './forward'
+import Graph from './Graph'
+import { randInt } from './utils'
 
 // TODO: Should create and its child funcs be its own module?
 export function create({
@@ -16,7 +18,6 @@ export function create({
   decayRate = 0.9,
   smoothingEpsilon = 1e-8, // to avoid division by zero
   // these are only passed in when restarting a saved model
-  stepCache = {},
   totalIterations = 0,
   models = createModels({
     type,
@@ -35,36 +36,35 @@ export function create({
     clipVal,
     decayRate,
     smoothingEpsilon,
-    stepCache,
     totalIterations,
-    graph: model,
+    model,
     textModel,
   })
 
-  const toJSON = () =>
-    JSON.stringify({
-      type,
-      hiddenSizes,
-      regc,
-      clipVal,
-      totalIterations,
-      models: {
-        textModel,
-        model: modelToJSON(model),
-      },
-      smoothingEpsilon,
-      decayRate,
-      stepCache: modelToJSON(stepCache),
-    })
+  // TODO IO
+  // const toJSON = () =>
+  //   JSON.stringify({
+  //     type,
+  //     hiddenSizes,
+  //     regc,
+  //     clipVal,
+  //     totalIterations,
+  //     models: {
+  //       textModel,
+  //       model: modelToJSON(model),
+  //     },
+  //     smoothingEpsilon,
+  //     decayRate,
+  //   })
 
   return {
     train,
-    toJSON,
     models: {
       model,
       textModel,
     },
-    hiddenSizes,
+    hiddenSizes, // why is this needed?
+    // toJSON,
   }
 }
 
@@ -77,7 +77,40 @@ function createModels({ type, hiddenSizes, letterSize, input, charCountThreshold
   if (type === 'rnn') {
     model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
   } else {
-    model = makeForwardLSTM(letterSize, hiddenSizes, textModel.inputSize)
+    const graph = new Graph()
+    const forwardFunc = makeForwardLSTM(
+      letterSize,
+      hiddenSizes,
+      textModel.inputSize,
+      graph,
+    )
+
+    const runForwardProp = input => {
+      graph.nextLayerIndex = 0
+      return forwardFunc(input)
+    }
+
+    model = {
+      forward: () => {
+        const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
+        graph.doBackprop = true
+        return computeCost({
+          forward: runForwardProp,
+          // type,
+          textModel,
+          sentence: randomSentence,
+        })
+      },
+      // TODO: destructure here for documentation purposes? Or maybe that's what docs are for?
+      predict: opts => {
+        graph.doBackprop = false
+        return predictSentence({ ...opts, forward: runForwardProp })
+      },
+      backward: () => {
+        graph.backward()
+      },
+      layers: graph.layers,
+    }
   }
 
   return { model, textModel }
@@ -113,6 +146,7 @@ function createTextModel(sentences, charCountThreshold = 1) {
   }, initialVocabData)
 }
 
+// TODO: Both of these will go away...or at most an example of each will be in the examples folder at root
 function initRNN(inputSize, hiddenSizes, outputSize) {
   const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
@@ -168,7 +202,8 @@ function initLSTM(inputSize, hiddenSizes, outputSize) { // eslint-disable-line
   }, {})
 }
 
-export function loadFromJSON(json) {
+/* TODO IO
+function loadFromJSON(json) {
   const args = JSON.parse(json)
 
   return create({
@@ -196,5 +231,6 @@ const modelFromJSON = model =>
       ...result,
       [matName]: matFromJSON(matJSON),
     }),
-    {},
+    {}
   )
+*/

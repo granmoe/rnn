@@ -1,7 +1,14 @@
 // updates weights based on gradients and cachedGradients, then resets gradients to 0
 // uses gradient clipping
-export default ({ model, learningRate, regc, clipVal, smoothingEpsilon, decayRate }) => {
-  for (const layer of Object.values(model.layers)) {
+export default ({
+  layers = [],
+  learningRate,
+  regc,
+  clipVal,
+  smoothingEpsilon,
+  decayRate,
+}) => {
+  for (const layer of layers) {
     // TODO: Graph can provide an optimize method that calls this function, passing in itself?
     const { cachedGradients, gradients, weights } = layer
 
