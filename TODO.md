@@ -6,15 +6,12 @@
 
 # In Progress
 
-- get predictSentence working again
 - then merge graph-rewrite -> master
 - cleanup branches
 
-- Mat/optimize refactor
-  - change layer to obj factory?
-
 # Next
 
+- Convert classes to object factories with closure for local data
 - Better overall API for building generic recurrent DNNs
 - Maybe just have one train method on graph that runs computeCost, backward, and optimize
 - And one predict method

@@ -10,7 +10,11 @@ export default class Graph {
     this.nextLayerIndex = 0
   }
 
-  getMat({ rows, cols, type = 'rand' }) {
+  getMat(opts) {
+    if (opts instanceof Layer) return opts // Layer instance passed in, don't use cache
+
+    const { rows, cols, type = 'rand' } = opts
+
     let mat
     if (this.layers[this.nextLayerIndex]) {
       mat = this.layers[this.nextLayerIndex]
