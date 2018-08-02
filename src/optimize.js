@@ -9,7 +9,6 @@ export default ({
   decayRate,
 }) => {
   for (const layer of layers) {
-    // TODO: Graph can provide an optimize method that calls this function, passing in itself?
     const { cachedGradients, gradients, weights } = layer
 
     for (let i = 0; i < layer.length; i++) {

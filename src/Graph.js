@@ -1,5 +1,5 @@
 import { assert, updateMats } from './utils'
-import Layer, { randLayer } from './Layer'
+import createLayer, { randLayer } from './layer'
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default class Graph {
@@ -11,7 +11,7 @@ export default class Graph {
   }
 
   getMat(opts) {
-    if (opts instanceof Layer) return opts // Layer instance passed in, don't use cache
+    if (opts.isLayer) return opts // existing layer passed in, don't use cache
 
     const { rows, cols, type = 'rand' } = opts
 
@@ -19,7 +19,7 @@ export default class Graph {
     if (this.layers[this.nextLayerIndex]) {
       mat = this.layers[this.nextLayerIndex]
     } else {
-      mat = type === 'rand' ? randLayer(rows, cols) : new Layer(rows, cols)
+      mat = type === 'rand' ? randLayer(rows, cols) : createLayer(rows, cols)
       this.layers.push(mat)
     }
 
@@ -36,7 +36,7 @@ export default class Graph {
     const m = this.getMat(mOpts)
     // pluck a row of m with index index and return it as col vector
     const cols = m.cols
-    const out = new Layer(cols, 1)
+    const out = createLayer(cols, 1)
     out.updateWeights((_weight, i) => m.weights[cols * index + i])
 
     this.doBackprop &&
@@ -100,15 +100,17 @@ export default class Graph {
     assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
     // out = dot product of m1 and m2
-    const out = new Layer(m1.rows, m2.cols).updateWeights((_weight, i, indexToCoord) => {
-      const { row, col } = indexToCoord(i)
-      let dot = 0
-      for (let n = 0; n < m1.cols; n++) {
-        dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
-      }
+    const out = createLayer(m1.rows, m2.cols).updateWeights(
+      (_weight, i, indexToCoord) => {
+        const { row, col } = indexToCoord(i)
+        let dot = 0
+        for (let n = 0; n < m1.cols; n++) {
+          dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
+        }
 
-      return dot
-    })
+        return dot
+      },
+    )
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {

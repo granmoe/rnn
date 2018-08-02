@@ -1,7 +1,7 @@
-import Layer from './Layer'
+import createLayer from './layer'
 
 export const updateMats = func => (...mats) => {
-  // TODO (someday): Assert that all mats have same length
+  // FIXME: Assert that all mats have same length
   // I wonder if this whole loop and inner loop and everything could be one reduce?
   // prob would need vectorized ops like in numpy or R in order to decrease number of loops here
   for (let i = 0; i < mats[0].weights.length; i++) {
@@ -47,7 +47,7 @@ export const maxIndex = weights =>
 
 // sample argmax from weight, assuming weight are probabilities that sum to one
 export function sampleIndex(weights) {
-  // TODO: Variable names here suck
+  // FIXME: Variable names here suck
   const r = randFloat(0, 1) // max value up to, but not including, 1
   let x = 0
   let i = 0
@@ -61,7 +61,7 @@ export function sampleIndex(weights) {
 }
 
 export function softmax(m) {
-  const out = new Layer(m.rows, m.cols) // probability volume
+  const out = createLayer(m.rows, m.cols) // probability volume
 
   const [firstW, ...remainingW] = m.weights
   let maxval = firstW
@@ -95,7 +95,7 @@ export function* range(maxOrStart, max) {
 
 export function* slidingWindow(windowSize, arr) {
   const len = arr.length - (windowSize - 1)
-  // TODO: for...of is still just too slow even in the latest chrome :`-(
+  // FIXME: for...of is still just too slow even in the latest chrome :`-(
   // Maybe someday these can all change back to for (const i of range(len)) {}...
   for (let i = 0; i < len; i++) {
     yield arr.slice(i, i + windowSize)

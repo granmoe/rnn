@@ -1,4 +1,4 @@
-import { randLayer } from '../Layer'
+import { randLayer } from '../layer'
 
 describe('randLayer', () => {
   test('produces a matrix of the size given in the args with random values within the bounds given by the third arg', () => {

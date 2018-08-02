@@ -6,9 +6,6 @@
 
 # In Progress
 
-- then merge graph-rewrite -> master
-- cleanup branches
-
 # Next
 
 - Convert classes to object factories with closure for local data

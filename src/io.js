@@ -1,11 +1,13 @@
 import makeTrainFunc from './train'
-import Layer, { randLayer } from './Layer'
-import { computeCost, makeForwardLSTM, predictSentence } from './forward'
+import createLayer, { randLayer } from './layer'
+import { computeCost, predictSentence } from './forward'
 import Graph from './Graph'
 import { randInt } from './utils'
 
 // TODO: Should create and its child funcs be its own module?
 export function create({
+  // SETS UP THE GRAPH
+  modelFunc,
   // BASIC HYPER PARAMS
   type,
   input,
@@ -25,6 +27,7 @@ export function create({
     hiddenSizes,
     letterSize,
     charCountThreshold,
+    modelFunc,
   }),
 }) {
   const { model, textModel } = models
@@ -69,7 +72,14 @@ export function create({
 }
 
 // TODO: This name is kind of awkward
-function createModels({ type, hiddenSizes, letterSize, input, charCountThreshold }) {
+function createModels({
+  type,
+  hiddenSizes,
+  letterSize,
+  input,
+  charCountThreshold,
+  modelFunc,
+}) {
   const sentences = input.split('\n').map(str => str.trim())
   const textModel = createTextModel(sentences, charCountThreshold)
 
@@ -78,12 +88,12 @@ function createModels({ type, hiddenSizes, letterSize, input, charCountThreshold
     model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
   } else {
     const graph = new Graph()
-    const forwardFunc = makeForwardLSTM(
-      letterSize,
+    const forwardFunc = modelFunc({
+      inputSize: letterSize,
+      outputSize: textModel.inputSize,
       hiddenSizes,
-      textModel.inputSize,
       graph,
-    )
+    })
 
     const runForwardProp = input => {
       graph.nextLayerIndex = 0
@@ -153,53 +163,17 @@ function initRNN(inputSize, hiddenSizes, outputSize) {
 
     model['Wxh' + index] = randLayer(hiddenSize, prevSize, 0.08)
     model['Whh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bhh' + index] = new Layer(hiddenSize, 1)
+    model['bhh' + index] = createLayer(hiddenSize, 1)
   }, {})
 
   // decoder params
   model['Whd'] = randLayer(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
-  model['bd'] = new Layer(outputSize, 1)
+  model['bd'] = createLayer(outputSize, 1)
 
   // letter embedding vectors
   model['Wil'] = randLayer(outputSize, inputSize, 0, 0.08)
 
   return model
-}
-
-// inputSize = letterSize, outputSize = num unique chars
-// prettier-ignore
-function initLSTM(inputSize, hiddenSizes, outputSize) { // eslint-disable-line
-  return hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
-    const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
-
-    // input gate
-    model['Wix' + index] = randLayer(hiddenSize, prevSize, 0.08)
-    model['Wih' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bi' + index] = new Layer(hiddenSize, 1)
-    // forget gate
-    model['Wfx' + index] = randLayer(hiddenSize, prevSize, 0.08)
-    model['Wfh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bf' + index] = new Layer(hiddenSize, 1)
-    // output gate
-    model['Wox' + index] = randLayer(hiddenSize, prevSize, 0.08)
-    model['Woh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bo' + index] = new Layer(hiddenSize, 1)
-
-    // cell write params
-    model['Wcx' + index] = randLayer(hiddenSize, prevSize, 0.08)
-    model['Wch' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bc' + index] = new Layer(hiddenSize, 1)
-
-    // TODO: Looks like these get overwritten every iteration
-    // decoder params
-    model['Whd'] = randLayer(outputSize, hiddenSize, 0.08)
-    model['bd'] = new Layer(outputSize, 1)
-
-    // letter embedding vectors
-    model['Wil'] = randLayer(outputSize, inputSize, 0.08)
-
-    return model
-  }, {})
 }
 
 /* TODO IO
