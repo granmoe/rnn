@@ -3,8 +3,6 @@ import { range } from './utils'
 
 // make a train function that closes around a given graph instance and its params
 const makeTrainFunc = ({
-  type,
-  hiddenSizes,
   regc,
   clipVal,
   decayRate,

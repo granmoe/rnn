@@ -1,5 +1,4 @@
 import makeTrainFunc from './train'
-import createLayer, { randLayer } from './layer'
 import { computeCost, predictSentence } from './forward'
 import Graph from './Graph'
 import { randInt } from './utils'
@@ -72,55 +71,43 @@ export function create({
 }
 
 // TODO: This name is kind of awkward
-function createModels({
-  type,
-  hiddenSizes,
-  letterSize,
-  input,
-  charCountThreshold,
-  modelFunc,
-}) {
+function createModels({ hiddenSizes, letterSize, input, charCountThreshold, modelFunc }) {
   const sentences = input.split('\n').map(str => str.trim())
   const textModel = createTextModel(sentences, charCountThreshold)
 
-  let model
-  if (type === 'rnn') {
-    model = initRNN(letterSize, hiddenSizes, textModel.inputSize)
-  } else {
-    const graph = new Graph()
-    const forwardFunc = modelFunc({
-      inputSize: letterSize,
-      outputSize: textModel.inputSize,
-      hiddenSizes,
-      graph,
-    })
+  const graph = new Graph()
+  const forwardFunc = modelFunc({
+    inputSize: letterSize,
+    outputSize: textModel.inputSize,
+    hiddenSizes,
+    graph,
+  })
 
-    const runForwardProp = input => {
-      graph.nextLayerIndex = 0
-      return forwardFunc(input)
-    }
+  const runForwardProp = input => {
+    graph.nextLayerIndex = 0
+    return forwardFunc(input)
+  }
 
-    model = {
-      forward: () => {
-        const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
-        graph.doBackprop = true
-        return computeCost({
-          forward: runForwardProp,
-          // type,
-          textModel,
-          sentence: randomSentence,
-        })
-      },
-      // TODO: destructure here for documentation purposes? Or maybe that's what docs are for?
-      predict: opts => {
-        graph.doBackprop = false
-        return predictSentence({ ...opts, forward: runForwardProp })
-      },
-      backward: () => {
-        graph.backward()
-      },
-      layers: graph.layers,
-    }
+  const model = {
+    forward: () => {
+      const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
+      graph.doBackprop = true
+      return computeCost({
+        forward: runForwardProp,
+        // type,
+        textModel,
+        sentence: randomSentence,
+      })
+    },
+    // TODO: destructure here for documentation purposes? Or maybe that's what docs are for?
+    predict: opts => {
+      graph.doBackprop = false
+      return predictSentence({ ...opts, forward: runForwardProp })
+    },
+    backward: () => {
+      graph.backward()
+    },
+    layers: graph.layers,
   }
 
   return { model, textModel }
@@ -154,26 +141,6 @@ function createTextModel(sentences, charCountThreshold = 1) {
 
     return result
   }, initialVocabData)
-}
-
-// TODO: Both of these will go away...or at most an example of each will be in the examples folder at root
-function initRNN(inputSize, hiddenSizes, outputSize) {
-  const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
-    const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
-
-    model['Wxh' + index] = randLayer(hiddenSize, prevSize, 0.08)
-    model['Whh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bhh' + index] = createLayer(hiddenSize, 1)
-  }, {})
-
-  // decoder params
-  model['Whd'] = randLayer(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
-  model['bd'] = createLayer(outputSize, 1)
-
-  // letter embedding vectors
-  model['Wil'] = randLayer(outputSize, inputSize, 0, 0.08)
-
-  return model
 }
 
 /* TODO IO

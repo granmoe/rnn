@@ -1,35 +1,44 @@
-import createLayer from '../layer'
+export default ({ graph, outputSize, inputSize, hiddenSizes }) => charIndex => {
+  const x = graph.rowPluck({ rows: outputSize, cols: inputSize }, charIndex) // Wil
 
-// TODO RNN
-// prettier-ignore
-function forwardRNN(graph, model, x, prev, hiddenSizes) { // eslint-disable-line
-  // forward prop for a single tick of RNN
-  // model contains RNN parameters
-  // x is 1D column vector with observation
-  // prev is a struct containing hidden activations from last step
+  const finalHidden = hiddenSizes.reduce((prevHidden, hiddenSize, index) => {
+    let inputVector = prevHidden || x
+    let hiddenPrev = graph.getMat({ rows: hiddenSize, cols: 1, type: 'zeros' })
 
-  // TODO: prev.h is the only thing used from prev...just pass in prev.h directly and use default value
+    let h0 = graph.mul({ rows: hiddenSize, cols: inputVector.rows }, inputVector) // Wxh index
+    let h1 = graph.mul({ rows: hiddenSize, cols: hiddenSize }, hiddenPrev) // Whh index
 
-  let hiddenPrevs
-  if (typeof prev.h === 'undefined') {
-    hiddenPrevs = hiddenSizes.map(hiddenSize => createLayer(hiddenSize, 1))
-  } else {
-    hiddenPrevs = prev.h
-  }
-
-  const h = hiddenSizes.reduce((result, hiddenSize, index) => {
-    let inputVector = index === 0 ? x : result[index - 1]
-    let hiddenPrev = hiddenPrevs[index]
-
-    let h0 = graph.mul(model['Wxh' + index], inputVector)
-    let h1 = graph.mul(model['Whh' + index], hiddenPrev)
-
-    return graph.relu(graph.add(graph.add(h0, h1), model['bhh' + index]))
-  }, [])
+    return graph.relu(
+      graph.add(graph.add(h0, h1), { rows: hiddenSize, cols: 1, type: 'zeros' }), // bhh index
+    )
+  }, null)
 
   // one decoder to outputs at end
-  const o = graph.add(graph.mul(model['Whd'], h[h.length - 1]), model['bd'])
+  return graph.add(
+    graph.mul(
+      { rows: outputSize, cols: finalHidden.rows }, // Whd
+      finalHidden,
+    ),
+    { rows: outputSize, cols: 1, type: 'zeros' }, // bd
+  )
+}
 
-  // return cell memory, hidden representation and output
-  return { h, o }
+// TODO: Delete this once above is working
+function initRNN(inputSize, hiddenSizes, outputSize) {
+  const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
+    const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
+
+    model['Wxh' + index] = randLayer(hiddenSize, prevSize, 0.08)
+    model['Whh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
+    model['bhh' + index] = createLayer(hiddenSize, 1)
+  }, {})
+
+  // decoder params
+  model['Whd'] = randLayer(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
+  model['bd'] = createLayer(outputSize, 1)
+
+  // letter embedding vectors
+  model['Wil'] = randLayer(outputSize, inputSize, 0, 0.08)
+
+  return model
 }
