@@ -9,6 +9,7 @@
 # Next
 
 - Convert classes to object factories with closure for local data
+  - Matrix refactor
 - Better overall API for building generic recurrent DNNs
 - Maybe just have one train method on graph that runs computeCost, backward, and optimize
 - And one predict method
