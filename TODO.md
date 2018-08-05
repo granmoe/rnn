@@ -10,6 +10,10 @@
 
 - Convert classes to object factories with closure for local data
   - Matrix refactor
+    - tests first!
+    - convert to pure funcs and an object factory
+    - rename back to matrix
+    - rows, cols -> { numRows, numCols }
 - Better overall API for building generic recurrent DNNs
 - Maybe just have one train method on graph that runs computeCost, backward, and optimize
 - And one predict method

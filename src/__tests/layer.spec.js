@@ -1,4 +1,4 @@
-import { randLayer } from '../layer'
+import { cloneMat, randLayer } from '../layer'
 
 describe('randLayer', () => {
   test('produces a matrix of the size given in the args with random values within the bounds given by the third arg', () => {
@@ -17,6 +17,21 @@ describe('randLayer', () => {
 
     result.weights.forEach(weight => {
       expect(weight < 0.08 && weight > -0.08).toBeTruthy()
+    })
+  })
+})
+
+describe('cloneMat', () => {
+  test('returns a new matrix with the same weights as the input matrix, but zeroed gradients', () => {
+    const mat = randLayer(10, 10)
+    const clonedMat = cloneMat(mat)
+
+    clonedMat.weights.forEach((weight, index) => {
+      expect(weight).toEqual(mat.weights[index])
+    })
+
+    clonedMat.gradients.forEach(gradient => {
+      expect(gradient).toEqual(0)
     })
   })
 })

@@ -1,5 +1,5 @@
 import { assert, updateMats } from './utils'
-import createLayer, { randLayer } from './layer'
+import createLayer, { randLayer, cloneMat } from './layer'
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default class Graph {
@@ -51,7 +51,7 @@ export default class Graph {
 
   tanh(mOpts) {
     const m = this.getMat(mOpts)
-    const out = m.clone().updateWeights(Math.tanh) // tanh nonlinearity
+    const out = cloneMat(m).updateWeights(Math.tanh) // tanh nonlinearity
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
@@ -66,7 +66,7 @@ export default class Graph {
 
   sigmoid(mOpts) {
     const m = this.getMat(mOpts)
-    const out = m.clone().updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
+    const out = cloneMat(m).updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
@@ -82,7 +82,7 @@ export default class Graph {
 
   relu(mOpts) {
     const m = this.getMat(mOpts)
-    const out = m.clone().updateWeights(Math.max.bind(null, 0)) // sigmoid nonlinearity
+    const out = cloneMat(m).updateWeights(Math.max.bind(null, 0)) // sigmoid nonlinearity
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
@@ -135,9 +135,9 @@ export default class Graph {
     const m2 = this.getMat(m2opts)
     assert(m1.weights.length === m2.weights.length)
 
-    const out = m1
-      .clone()
-      .updateWeights((_weight, index) => m1.weights[index] + m2.weights[index])
+    const out = cloneMat(m1).updateWeights(
+      (_weight, index) => m1.weights[index] + m2.weights[index],
+    )
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
@@ -153,7 +153,7 @@ export default class Graph {
     const m1 = this.getMat(m1opts)
     const m2 = this.getMat(m2opts)
     assert(m1.weights.length === m2.weights.length)
-    let out = m1.clone().updateWeights((weight, i) => weight * m2.weights[i])
+    let out = cloneMat(m1).updateWeights((weight, i) => weight * m2.weights[i])
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {

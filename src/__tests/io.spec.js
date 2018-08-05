@@ -1,6 +1,7 @@
-import { create, loadFromJSON } from '../io'
-import { predictSentence, computeCost } from '../forward'
-import { rnnJSON, input } from './model-test-data'
+/* eslint-disable */
+// import { create, loadFromJSON } from '../io'
+// import { predictSentence, computeCost } from '../forward'
+// import { rnnJSON, input } from './model-test-data'
 
 // TODO: How to test with sample: true?
 // AND: Add more variations of the two tests below

@@ -33,25 +33,26 @@ export default function createLayer(rows, cols) {
     resetGradients() {
       layer.gradients = new Float64Array(length)
     },
-    clone() {
-      // does not copy over values of gradients or cachedGradients
-      const copy = createLayer(rows, cols)
-      copy.weights = new Float64Array(layer.weights)
-      return copy
-    },
-    serialize() {}, // TODO IO
   }
 
   return layer
 }
 
-// TODO IO
-export const matFromJSON = ({ rows, cols, weights }) => {
-  const mat = createLayer(rows, cols)
-  mat.weights = new Float64Array(Object.values(weights))
-  return mat
-}
-
 // return Layer but filled with random numbers from gaussian
 export const randLayer = (rows, cols, std = 0.08) =>
   createLayer(rows, cols).updateWeights(_ => randFloat(-std, std)) // kind of :P
+
+export const cloneMat = mat => {
+  // does not copy over values of gradients or cachedGradients
+  const copy = createLayer(mat.rows, mat.cols)
+  copy.weights = new Float64Array(mat.weights)
+  return copy
+}
+
+// serialize() {}, // TODO IO
+// TODO IO
+// export const matFromJSON = ({ rows, cols, weights }) => {
+//   const mat = createLayer(rows, cols)
+//   mat.weights = new Float64Array(Object.values(weights))
+//   return mat
+// }
