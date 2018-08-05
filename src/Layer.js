@@ -33,7 +33,7 @@ export const resetGradients = mat => {
   mat.gradients = new Float64Array(mat.length)
 }
 
-export const matIndexToCoord = (i, mat) => {
+export const matIndexToCoord = (mat, i) => {
   return {
     row: Math.ceil((i + 1) / mat.cols) - 1,
     col: ((i + 1) % mat.cols || mat.cols) - 1,

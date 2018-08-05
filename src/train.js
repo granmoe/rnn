@@ -19,7 +19,6 @@ const makeTrainFunc = ({
     sampleFrequency = null, // how often to return samples and argmax (don't sample if not a number > 1)
   } = {}) => {
     for (const currentIteration of range(1, numIterations)) {
-      console.log('current iteration: ', totalIterations)
       totalIterations += 1
 
       const { perplexity, cost } = forward()
