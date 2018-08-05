@@ -10,6 +10,7 @@
 
 - Convert classes to object factories with closure for local data
   - Matrix refactor
+    - can't calc row/col in every update, too slow!!! 1-2 seconds in graph.mul, go back to original way and run profiler again and compare
     - tests first!
     - convert to pure funcs and an object factory
     - rename back to matrix

@@ -24,21 +24,21 @@ export default ({ graph, outputSize, inputSize, hiddenSizes }) => charIndex => {
 }
 
 // TODO: Delete this once above is working
-function initRNN(inputSize, hiddenSizes, outputSize) {
-  const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
-    const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
+// function initRNN(inputSize, hiddenSizes, outputSize) {
+//   const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
+//     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
-    model['Wxh' + index] = randLayer(hiddenSize, prevSize, 0.08)
-    model['Whh' + index] = randLayer(hiddenSize, hiddenSize, 0.08)
-    model['bhh' + index] = createLayer(hiddenSize, 1)
-  }, {})
+//     model['Wxh' + index] = createRandomLayer(hiddenSize, prevSize, 0.08)
+//     model['Whh' + index] = createRandomLayer(hiddenSize, hiddenSize, 0.08)
+//     model['bhh' + index] = createLayer(hiddenSize, 1)
+//   }, {})
 
-  // decoder params
-  model['Whd'] = randLayer(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
-  model['bd'] = createLayer(outputSize, 1)
+//   // decoder params
+//   model['Whd'] = createRandomLayer(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
+//   model['bd'] = createLayer(outputSize, 1)
 
-  // letter embedding vectors
-  model['Wil'] = randLayer(outputSize, inputSize, 0, 0.08)
+//   // letter embedding vectors
+//   model['Wil'] = createRandomLayer(outputSize, inputSize, 0, 0.08)
 
-  return model
-}
+//   return model
+// }

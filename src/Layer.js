@@ -4,7 +4,7 @@ import { randFloat } from './utils'
 export default function createLayer(rows, cols) {
   const length = rows * cols
 
-  const layer = {
+  return {
     isLayer: true,
     rows,
     cols,
@@ -12,32 +12,15 @@ export default function createLayer(rows, cols) {
     weights: new Float64Array(length),
     gradients: new Float64Array(length),
     cachedGradients: new Float64Array(length),
-    indexToCoord(i) {
-      return {
-        row: Math.ceil((i + 1) / cols) - 1,
-        col: ((i + 1) % cols || cols) - 1,
-      }
-    },
-    updateWeights(func) {
-      layer.updateMat(func, layer.weights)
-      return layer
-    },
-    updateGradients(func) {
-      layer.updateMat(func, layer.gradients)
-    },
-    updateMat(func, mat) {
-      mat.forEach((weight, i) => {
-        mat[i] = func(weight, i, layer.indexToCoord)
-      })
-    },
   }
-
-  return layer
 }
 
 // return Layer but filled with random numbers from gaussian
-export const randLayer = (rows, cols, std = 0.08) =>
-  createLayer(rows, cols).updateWeights(_ => randFloat(-std, std)) // kind of :P
+export const createRandomLayer = (rows, cols, std = 0.08) => {
+  const randomLayer = createLayer(rows, cols)
+  updateWeights(randomLayer, _ => randFloat(-std, std)) // kind of :P
+  return randomLayer
+}
 
 export const cloneMat = mat => {
   // does not copy over values of gradients or cachedGradients
@@ -50,8 +33,29 @@ export const resetGradients = mat => {
   mat.gradients = new Float64Array(mat.length)
 }
 
-// serialize() {}, // TODO IO
+export const matIndexToCoord = (i, mat) => {
+  return {
+    row: Math.ceil((i + 1) / mat.cols) - 1,
+    col: ((i + 1) % mat.cols || mat.cols) - 1,
+  }
+}
+
+export const updateGradients = (mat, func) => {
+  mat.gradients.forEach((gradient, i) => {
+    mat.gradients[i] = func(gradient, i)
+  })
+}
+
+export const updateWeights = (mat, func) => {
+  mat.weights.forEach((weight, i) => {
+    mat.weights[i] = func(weight, i)
+  })
+}
+
 // TODO IO
+
+// serialize() {}
+
 // export const matFromJSON = ({ rows, cols, weights }) => {
 //   const mat = createLayer(rows, cols)
 //   mat.weights = new Float64Array(Object.values(weights))
