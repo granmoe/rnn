@@ -1,11 +1,11 @@
 import { assert, updateMats } from './utils'
-import createLayer, {
-  createRandomLayer,
+import createMat, {
+  createRandomMat,
   cloneMat,
   matIndexToCoord,
   updateWeights,
   updateGradients,
-} from './Layer'
+} from './matrix'
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default class Graph {
@@ -25,7 +25,7 @@ export default class Graph {
     if (this.layers[this.nextLayerIndex]) {
       mat = this.layers[this.nextLayerIndex]
     } else {
-      mat = type === 'rand' ? createRandomLayer(rows, cols) : createLayer(rows, cols)
+      mat = type === 'rand' ? createRandomMat(rows, cols) : createMat(rows, cols)
       this.layers.push(mat)
     }
 
@@ -42,7 +42,7 @@ export default class Graph {
     const m = this.getMat(mOpts)
     // pluck a row of m with index index and return it as col vector
     const cols = m.cols
-    const out = createLayer(cols, 1)
+    const out = createMat(cols, 1)
     updateWeights(out, (_weight, i) => m.weights[cols * index + i])
 
     this.doBackprop &&
@@ -112,7 +112,7 @@ export default class Graph {
     assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
     // out = dot product of m1 and m2
-    const out = createLayer(m1.rows, m2.cols)
+    const out = createMat(m1.rows, m2.cols)
     updateWeights(out, (_weight, i) => {
       const { row, col } = matIndexToCoord(out, i)
       let dot = 0

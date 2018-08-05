@@ -1,4 +1,4 @@
-import createLayer, { updateWeights } from './Layer'
+import createMat, { updateWeights } from './matrix'
 
 export const updateMats = func => (...mats) => {
   // FIXME: Assert that all mats have same length
@@ -61,7 +61,7 @@ export function sampleIndex(weights) {
 }
 
 export function softmax(m) {
-  const out = createLayer(m.rows, m.cols) // probability volume
+  const out = createMat(m.rows, m.cols) // probability volume
 
   const [firstW, ...remainingW] = m.weights
   let maxval = firstW

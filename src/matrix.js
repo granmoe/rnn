@@ -1,7 +1,7 @@
-import { randFloat } from './utils'
+import { assert, randFloat } from './utils'
 
 // FIXME: Change rows/cols to rowCount, colCount or numRows, numCols
-export default function createLayer(rows, cols) {
+export default function createMat(rows, cols) {
   const length = rows * cols
 
   return {
@@ -16,15 +16,15 @@ export default function createLayer(rows, cols) {
 }
 
 // return Layer but filled with random numbers from gaussian
-export const createRandomLayer = (rows, cols, std = 0.08) => {
-  const randomLayer = createLayer(rows, cols)
+export const createRandomMat = (rows, cols, std = 0.08) => {
+  const randomLayer = createMat(rows, cols)
   updateWeights(randomLayer, _ => randFloat(-std, std)) // kind of :P
   return randomLayer
 }
 
 export const cloneMat = mat => {
   // does not copy over values of gradients or cachedGradients
-  const copy = createLayer(mat.rows, mat.cols)
+  const copy = createMat(mat.rows, mat.cols)
   copy.weights = new Float64Array(mat.weights)
   return copy
 }
@@ -34,6 +34,7 @@ export const resetGradients = mat => {
 }
 
 export const matIndexToCoord = (mat, i) => {
+  assert(i < mat.length, 'index greater than matrix length')
   return {
     row: Math.ceil((i + 1) / mat.cols) - 1,
     col: ((i + 1) % mat.cols || mat.cols) - 1,
@@ -57,7 +58,7 @@ export const updateWeights = (mat, func) => {
 // serialize() {}
 
 // export const matFromJSON = ({ rows, cols, weights }) => {
-//   const mat = createLayer(rows, cols)
+//   const mat = createMat(rows, cols)
 //   mat.weights = new Float64Array(Object.values(weights))
 //   return mat
 // }

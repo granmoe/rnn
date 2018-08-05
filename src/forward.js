@@ -1,5 +1,5 @@
 import { softmax, maxIndex, sampleIndex } from './utils'
-import { updateWeights } from './Layer'
+import { updateWeights } from './matrix'
 
 export function predictSentence({
   forward,

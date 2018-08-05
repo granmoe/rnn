@@ -1,0 +1,83 @@
+import createMat, {
+  cloneMat,
+  createRandomMat,
+  matIndexToCoord,
+  updateGradients,
+  updateWeights,
+} from '../matrix'
+
+describe('createRandomMat', () => {
+  test('produces a matrix of the size given in the args with random values within the bounds given by the third arg', () => {
+    const result = createRandomMat(20, 30, 0.5)
+
+    expect(result.rows).toBe(20)
+    expect(result.cols).toBe(30)
+
+    result.weights.forEach(weight => {
+      expect(weight < 0.5 && weight > -0.5).toBeTruthy()
+    })
+  })
+
+  test('produces a with random values between -0.08 and 0.08 when no bound is provided', () => {
+    const result = createRandomMat(40, 1)
+
+    result.weights.forEach(weight => {
+      expect(weight < 0.08 && weight > -0.08).toBeTruthy()
+    })
+  })
+})
+
+describe('cloneMat', () => {
+  test('returns a new matrix with the same weights as the input matrix, but zeroed gradients', () => {
+    const mat = createRandomMat(10, 10)
+    const clonedMat = cloneMat(mat)
+
+    clonedMat.weights.forEach((weight, index) => {
+      expect(weight).toEqual(mat.weights[index])
+    })
+
+    clonedMat.gradients.forEach(gradient => {
+      expect(gradient).toEqual(0)
+    })
+  })
+})
+
+describe('matIndexToCoord', () => {
+  const mat = createMat(10, 10)
+
+  test('returns an object { row, col } for a given matrix and index', () => {
+    expect(matIndexToCoord(mat, 0)).toEqual({ row: 0, col: 0 })
+    expect(matIndexToCoord(mat, 10)).toEqual({ row: 1, col: 0 })
+    expect(matIndexToCoord(mat, 11)).toEqual({ row: 1, col: 1 })
+    expect(matIndexToCoord(mat, 98)).toEqual({ row: 9, col: 8 })
+    expect(matIndexToCoord(mat, 99)).toEqual({ row: 9, col: 9 })
+  })
+
+  test('throws error when passing index > matrix.length', () => {
+    expect(() => matIndexToCoord(mat, 100)).toThrowError()
+  })
+})
+
+describe('updateGradients', () => {
+  test('uses passed in function to update gradient values of a matrix', () => {
+    const mat = createMat(2, 2)
+    const expectedGradients = [0, 1, 2, 3]
+
+    updateGradients(mat, (grad, i) => grad + i)
+    mat.gradients.forEach((grad, i) => {
+      expect(grad).toBe(expectedGradients[i])
+    })
+  })
+})
+
+describe('updateWeights', () => {
+  test('uses passed in function to update weights of a matrix', () => {
+    const mat = createMat(2, 2)
+    const expectedWeights = [0, 1, 2, 3]
+
+    updateWeights(mat, (weight, i) => weight + i)
+    mat.weights.forEach((weight, i) => {
+      expect(weight).toBe(expectedWeights[i])
+    })
+  })
+})
