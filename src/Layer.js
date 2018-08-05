@@ -30,9 +30,6 @@ export default function createLayer(rows, cols) {
         mat[i] = func(weight, i, layer.indexToCoord)
       })
     },
-    resetGradients() {
-      layer.gradients = new Float64Array(length)
-    },
   }
 
   return layer
@@ -47,6 +44,10 @@ export const cloneMat = mat => {
   const copy = createLayer(mat.rows, mat.cols)
   copy.weights = new Float64Array(mat.weights)
   return copy
+}
+
+export const resetGradients = mat => {
+  mat.gradients = new Float64Array(mat.length)
 }
 
 // serialize() {}, // TODO IO

@@ -1,4 +1,4 @@
-import createLayer from './layer'
+import createLayer from './Layer'
 
 export const updateMats = func => (...mats) => {
   // FIXME: Assert that all mats have same length

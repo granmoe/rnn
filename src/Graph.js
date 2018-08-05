@@ -1,5 +1,5 @@
 import { assert, updateMats } from './utils'
-import createLayer, { randLayer, cloneMat } from './layer'
+import createLayer, { randLayer, cloneMat } from './Layer'
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default class Graph {

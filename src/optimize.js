@@ -1,3 +1,4 @@
+import { resetGradients } from './Layer'
 // updates weights based on gradients and cachedGradients, then resets gradients to 0
 // uses gradient clipping
 export default ({
@@ -40,6 +41,6 @@ export default ({
       weights[i] -= step
     }
 
-    layer.resetGradients()
+    resetGradients(layer)
   }
 }
