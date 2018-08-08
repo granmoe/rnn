@@ -8,14 +8,11 @@
 
 # Next
 
-- Convert classes to object factories with closure for local data
-  - Matrix refactor
-    - can't calc row/col in every update, too slow!!! 1-2 seconds in graph.mul, go back to original way and run profiler again and compare
-    - tests first!
-    - convert to pure funcs and an object factory
-    - rename back to matrix
-    - rows, cols -> { numRows, numCols }
-- Better overall API for building generic recurrent DNNs
+- Change matrix back to obj/proto factory pattern
+- Change graphing in recurrentjs to use average ppl again
+- Convert graph to obj factory and pure funcs
+  - Try this: return Object.assign(Object.create(methods), data)
+- Better overall API for building generic recurrent DNNs (can't remember what I meant by this, but I think it was important)
 - Maybe just have one train method on graph that runs computeCost, backward, and optimize
 - And one predict method
 

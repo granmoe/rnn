@@ -1,4 +1,3 @@
-import { resetGradients } from './matrix'
 // updates weights based on gradients and cachedGradients, then resets gradients to 0
 // uses gradient clipping
 export default ({
@@ -41,6 +40,6 @@ export default ({
       weights[i] -= step
     }
 
-    resetGradients(layer)
+    layer.resetGradients()
   }
 }

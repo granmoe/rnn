@@ -1,10 +1,4 @@
-import createMat, {
-  cloneMat,
-  createRandomMat,
-  matIndexToCoord,
-  updateGradients,
-  updateWeights,
-} from '../matrix'
+import createMat, { createRandomMat, updateGradients, updateWeights } from '../matrix'
 
 describe('createRandomMat', () => {
   test('produces a matrix of the size given in the args with random values within the bounds given by the third arg', () => {
@@ -27,10 +21,10 @@ describe('createRandomMat', () => {
   })
 })
 
-describe('cloneMat', () => {
+describe('clone', () => {
   test('returns a new matrix with the same weights as the input matrix, but zeroed gradients', () => {
     const mat = createRandomMat(10, 10)
-    const clonedMat = cloneMat(mat)
+    const clonedMat = mat.clone()
 
     clonedMat.weights.forEach((weight, index) => {
       expect(weight).toEqual(mat.weights[index])
@@ -42,19 +36,19 @@ describe('cloneMat', () => {
   })
 })
 
-describe('matIndexToCoord', () => {
+describe('indexToCoord', () => {
   const mat = createMat(10, 10)
 
   test('returns an object { row, col } for a given matrix and index', () => {
-    expect(matIndexToCoord(mat, 0)).toEqual({ row: 0, col: 0 })
-    expect(matIndexToCoord(mat, 10)).toEqual({ row: 1, col: 0 })
-    expect(matIndexToCoord(mat, 11)).toEqual({ row: 1, col: 1 })
-    expect(matIndexToCoord(mat, 98)).toEqual({ row: 9, col: 8 })
-    expect(matIndexToCoord(mat, 99)).toEqual({ row: 9, col: 9 })
+    expect(mat.indexToCoord(0)).toEqual({ row: 0, col: 0 })
+    expect(mat.indexToCoord(10)).toEqual({ row: 1, col: 0 })
+    expect(mat.indexToCoord(11)).toEqual({ row: 1, col: 1 })
+    expect(mat.indexToCoord(98)).toEqual({ row: 9, col: 8 })
+    expect(mat.indexToCoord(99)).toEqual({ row: 9, col: 9 })
   })
 
   test('throws error when passing index > matrix.length', () => {
-    expect(() => matIndexToCoord(mat, 100)).toThrowError()
+    expect(() => mat.indexToCoord(100)).toThrowError()
   })
 })
 

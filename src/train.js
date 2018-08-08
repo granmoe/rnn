@@ -54,6 +54,7 @@ const makeTrainFunc = ({
         }
 
         return {
+          // TODO: invoke a passed-in callback instead of returning here
           iterations: totalIterations,
           perplexity,
           cost,

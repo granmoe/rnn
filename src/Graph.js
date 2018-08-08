@@ -1,11 +1,5 @@
 import { assert, updateMats } from './utils'
-import createMat, {
-  createRandomMat,
-  cloneMat,
-  matIndexToCoord,
-  updateWeights,
-  updateGradients,
-} from './matrix'
+import createMat, { createRandomMat, updateWeights, updateGradients } from './matrix'
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default class Graph {
@@ -57,7 +51,7 @@ export default class Graph {
 
   tanh(mOpts) {
     const m = this.getMat(mOpts)
-    const out = cloneMat(m)
+    const out = m.clone()
     updateWeights(out, Math.tanh) // tanh nonlinearity
 
     this.doBackprop &&
@@ -74,7 +68,7 @@ export default class Graph {
 
   sigmoid(mOpts) {
     const m = this.getMat(mOpts)
-    const out = cloneMat(m)
+    const out = m.clone()
     updateWeights(out, x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
 
     this.doBackprop &&
@@ -92,7 +86,7 @@ export default class Graph {
 
   relu(mOpts) {
     const m = this.getMat(mOpts)
-    const out = cloneMat(m)
+    const out = m.clone()
     updateWeights(out, Math.max.bind(null, 0)) // sigmoid nonlinearity
 
     this.doBackprop &&
@@ -114,7 +108,7 @@ export default class Graph {
     // out = dot product of m1 and m2
     const out = createMat(m1.rows, m2.cols)
     updateWeights(out, (_weight, i) => {
-      const { row, col } = matIndexToCoord(out, i)
+      const { row, col } = out.indexToCoord(i)
       let dot = 0
       for (let n = 0; n < m1.cols; n++) {
         dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
@@ -126,7 +120,7 @@ export default class Graph {
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
         out.gradients.map((b, i) => {
-          const { row, col } = matIndexToCoord(out, i)
+          const { row, col } = out.indexToCoord(i)
           for (let n = 0; n < m1.cols; n++) {
             const m1i = n + row * m1.cols
             const m2i = n * m2.cols + col
@@ -145,7 +139,7 @@ export default class Graph {
     const m2 = this.getMat(m2opts)
     assert(m1.weights.length === m2.weights.length)
 
-    const out = cloneMat(m1)
+    const out = m1.clone()
     updateWeights(out, (_weight, index) => m1.weights[index] + m2.weights[index])
 
     this.doBackprop &&
@@ -162,7 +156,7 @@ export default class Graph {
     const m1 = this.getMat(m1opts)
     const m2 = this.getMat(m2opts)
     assert(m1.weights.length === m2.weights.length)
-    let out = cloneMat(m1)
+    let out = m1.clone()
     updateWeights(out, (weight, i) => weight * m2.weights[i])
 
     this.doBackprop &&

@@ -12,6 +12,21 @@ export default function createMat(rows, cols) {
     weights: new Float64Array(length),
     gradients: new Float64Array(length),
     cachedGradients: new Float64Array(length),
+    clone() {
+      const copy = createMat(this.rows, this.cols)
+      copy.weights = new Float64Array(this.weights)
+      return copy
+    },
+    resetGradients() {
+      this.gradients = new Float64Array(this.length)
+    },
+    indexToCoord(i) {
+      assert(i < this.length, 'index greater than matrix length')
+      return {
+        row: Math.ceil((i + 1) / this.cols) - 1,
+        col: ((i + 1) % this.cols || this.cols) - 1,
+      }
+    },
   }
 }
 
@@ -20,25 +35,6 @@ export const createRandomMat = (rows, cols, std = 0.08) => {
   const randomLayer = createMat(rows, cols)
   updateWeights(randomLayer, _ => randFloat(-std, std)) // kind of :P
   return randomLayer
-}
-
-export const cloneMat = mat => {
-  // does not copy over values of gradients or cachedGradients
-  const copy = createMat(mat.rows, mat.cols)
-  copy.weights = new Float64Array(mat.weights)
-  return copy
-}
-
-export const resetGradients = mat => {
-  mat.gradients = new Float64Array(mat.length)
-}
-
-export const matIndexToCoord = (mat, i) => {
-  assert(i < mat.length, 'index greater than matrix length')
-  return {
-    row: Math.ceil((i + 1) / mat.cols) - 1,
-    col: ((i + 1) % mat.cols || mat.cols) - 1,
-  }
 }
 
 export const updateGradients = (mat, func) => {
