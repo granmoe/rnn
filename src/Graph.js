@@ -1,5 +1,5 @@
 import { assert, updateMats } from './utils'
-import createMat, { createRandomMat, updateWeights, updateGradients } from './matrix'
+import createMat, { createRandomMat } from './matrix'
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default class Graph {
@@ -36,8 +36,9 @@ export default class Graph {
     const m = this.getMat(mOpts)
     // pluck a row of m with index index and return it as col vector
     const cols = m.cols
-    const out = createMat(cols, 1)
-    updateWeights(out, (_weight, i) => m.weights[cols * index + i])
+    const out = createMat(cols, 1).updateWeights(
+      (_weight, i) => m.weights[cols * index + i],
+    )
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
@@ -51,13 +52,11 @@ export default class Graph {
 
   tanh(mOpts) {
     const m = this.getMat(mOpts)
-    const out = m.clone()
-    updateWeights(out, Math.tanh) // tanh nonlinearity
+    const out = m.clone().updateWeights(Math.tanh) // tanh nonlinearity
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
-        updateGradients(
-          m,
+        m.updateGradients(
           (gradient, i) =>
             gradient + (1 - out.weights[i] * out.weights[i]) * out.gradients[i],
         )
@@ -68,14 +67,12 @@ export default class Graph {
 
   sigmoid(mOpts) {
     const m = this.getMat(mOpts)
-    const out = m.clone()
-    updateWeights(out, x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
+    const out = m.clone().updateWeights(x => 1 / (1 + Math.exp(-x))) // sigmoid nonlinearity
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
         // grad for z = tanh(x) is (1 - z^2)
-        updateGradients(
-          m,
+        m.updateGradients(
           (gradient, i) =>
             gradient + out.weights[i] * (1 - out.weights[i]) * out.gradients[i],
         )
@@ -86,13 +83,11 @@ export default class Graph {
 
   relu(mOpts) {
     const m = this.getMat(mOpts)
-    const out = m.clone()
-    updateWeights(out, Math.max.bind(null, 0)) // sigmoid nonlinearity
+    const out = m.clone().updateWeights(Math.max.bind(null, 0)) // sigmoid nonlinearity
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
-        updateGradients(
-          m,
+        m.updateGradients(
           (gradient, i) => (gradient + m.weights[i] > 0 ? out.gradients[i] : 0),
         )
       })
@@ -106,9 +101,8 @@ export default class Graph {
     assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
     // out = dot product of m1 and m2
-    const out = createMat(m1.rows, m2.cols)
-    updateWeights(out, (_weight, i) => {
-      const { row, col } = out.indexToCoord(i)
+    const out = createMat(m1.rows, m2.cols).updateWeights((_weight, i, indexToCoord) => {
+      const { row, col } = indexToCoord(i)
       let dot = 0
       for (let n = 0; n < m1.cols; n++) {
         dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
@@ -139,8 +133,9 @@ export default class Graph {
     const m2 = this.getMat(m2opts)
     assert(m1.weights.length === m2.weights.length)
 
-    const out = m1.clone()
-    updateWeights(out, (_weight, index) => m1.weights[index] + m2.weights[index])
+    const out = m1
+      .clone()
+      .updateWeights((_weight, index) => m1.weights[index] + m2.weights[index])
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
@@ -156,8 +151,7 @@ export default class Graph {
     const m1 = this.getMat(m1opts)
     const m2 = this.getMat(m2opts)
     assert(m1.weights.length === m2.weights.length)
-    let out = m1.clone()
-    updateWeights(out, (weight, i) => weight * m2.weights[i])
+    let out = m1.clone().updateWeights((weight, i) => weight * m2.weights[i])
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {

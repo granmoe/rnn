@@ -1,4 +1,4 @@
-import createMat, { updateWeights } from './matrix'
+import createMat from './matrix'
 
 export const updateMats = func => (...mats) => {
   // FIXME: Assert that all mats have same length
@@ -75,7 +75,7 @@ export function softmax(m) {
     s += out.weights[i]
   }
 
-  updateWeights(out, weight => weight / s)
+  out.updateWeights(weight => weight / s)
 
   // no backward pass here needed since we will use the computed
   // probabilities outside to set gradients directly on m

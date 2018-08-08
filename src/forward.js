@@ -1,5 +1,4 @@
 import { softmax, maxIndex, sampleIndex } from './utils'
-import { updateWeights } from './matrix'
 
 export function predictSentence({
   forward,
@@ -20,7 +19,7 @@ export function predictSentence({
       // If temperature is high, logprobs will go towards zero,
       // and the softmax outputs will be more diffuse. If temperature is
       // very low, the softmax outputs will be more peaky
-      updateWeights(output, weight => weight / temperature)
+      output.updateWeights(weight => weight / temperature)
     }
     probs = softmax(output)
 

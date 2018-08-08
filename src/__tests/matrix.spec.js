@@ -1,4 +1,4 @@
-import createMat, { createRandomMat, updateGradients, updateWeights } from '../matrix'
+import createMat, { createRandomMat } from '../matrix'
 
 describe('createRandomMat', () => {
   test('produces a matrix of the size given in the args with random values within the bounds given by the third arg', () => {
@@ -57,7 +57,7 @@ describe('updateGradients', () => {
     const mat = createMat(2, 2)
     const expectedGradients = [0, 1, 2, 3]
 
-    updateGradients(mat, (grad, i) => grad + i)
+    mat.updateGradients((grad, i) => grad + i)
     mat.gradients.forEach((grad, i) => {
       expect(grad).toBe(expectedGradients[i])
     })
@@ -69,7 +69,7 @@ describe('updateWeights', () => {
     const mat = createMat(2, 2)
     const expectedWeights = [0, 1, 2, 3]
 
-    updateWeights(mat, (weight, i) => weight + i)
+    mat.updateWeights((weight, i) => weight + i)
     mat.weights.forEach((weight, i) => {
       expect(weight).toBe(expectedWeights[i])
     })

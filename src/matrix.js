@@ -27,32 +27,26 @@ export default function createMat(rows, cols) {
         col: ((i + 1) % this.cols || this.cols) - 1,
       }
     },
+    updateGradients(func) {
+      this.gradients.forEach((gradient, i) => {
+        this.gradients[i] = func(gradient, i)
+      })
+    },
+    updateWeights(func) {
+      this.weights.forEach((weight, i) => {
+        this.weights[i] = func(weight, i, this.indexToCoord.bind(this))
+      })
+      return this
+    },
   }
 }
 
 // return Layer but filled with random numbers from gaussian
-export const createRandomMat = (rows, cols, std = 0.08) => {
-  const randomLayer = createMat(rows, cols)
-  updateWeights(randomLayer, _ => randFloat(-std, std)) // kind of :P
-  return randomLayer
-}
-
-export const updateGradients = (mat, func) => {
-  mat.gradients.forEach((gradient, i) => {
-    mat.gradients[i] = func(gradient, i)
-  })
-}
-
-export const updateWeights = (mat, func) => {
-  mat.weights.forEach((weight, i) => {
-    mat.weights[i] = func(weight, i)
-  })
-}
+export const createRandomMat = (rows, cols, std = 0.08) =>
+  createMat(rows, cols).updateWeights(_ => randFloat(-std, std)) // kind of :P
 
 // TODO IO
-
 // serialize() {}
-
 // export const matFromJSON = ({ rows, cols, weights }) => {
 //   const mat = createMat(rows, cols)
 //   mat.weights = new Float64Array(Object.values(weights))
