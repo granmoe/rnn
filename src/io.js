@@ -1,6 +1,6 @@
 import makeTrainFunc from './train'
 import { computeCost, predictSentence } from './forward'
-import createGraph from './Graph'
+import createGraph from './graph'
 import { randInt } from './utils'
 
 // TODO: Should create and its child funcs be its own module?
