@@ -8,7 +8,6 @@
 
 # Next
 
-- Convert graph to proto/data factory like matrix
 - Better overall API for building generic recurrent DNNs (can't remember what I meant by this, but I think it was important)
 - Maybe just have one train method on graph that runs computeCost, backward, and optimize
 - And one predict method

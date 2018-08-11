@@ -1,6 +1,6 @@
 import makeTrainFunc from './train'
 import { computeCost, predictSentence } from './forward'
-import Graph from './Graph'
+import createGraph from './Graph'
 import { randInt } from './utils'
 
 // TODO: Should create and its child funcs be its own module?
@@ -74,7 +74,7 @@ function createModels({ hiddenSizes, letterSize, input, charCountThreshold, mode
   const sentences = input.split('\n').map(str => str.trim())
   const textModel = createTextModel(sentences, charCountThreshold)
 
-  const graph = new Graph()
+  const graph = createGraph()
 
   const forwardFunc = modelFunc({
     inputSize: letterSize,
