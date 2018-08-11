@@ -76,6 +76,7 @@ function createModels({ hiddenSizes, letterSize, input, charCountThreshold, mode
   const textModel = createTextModel(sentences, charCountThreshold)
 
   const graph = new Graph()
+
   const forwardFunc = modelFunc({
     inputSize: letterSize,
     outputSize: textModel.inputSize,
@@ -83,30 +84,37 @@ function createModels({ hiddenSizes, letterSize, input, charCountThreshold, mode
     graph,
   })
 
-  const runForwardProp = input => {
+  const computeCostForwardFunc = input => {
     graph.nextLayerIndex = 0
+    graph.doBackprop = true
+    return forwardFunc(input)
+  }
+
+  const predictForwardFunc = input => {
+    graph.nextLayerIndex = 0
+    graph.doBackprop = false
     return forwardFunc(input)
   }
 
   const model = {
     forward: () => {
       const randomSentence = textModel.sentences[randInt(0, textModel.sentences.length)]
-      graph.doBackprop = true
+
       return computeCost({
-        forward: runForwardProp,
-        // type,
         textModel,
+        forward: computeCostForwardFunc,
         sentence: randomSentence,
       })
     },
     // TODO: destructure here for documentation purposes? Or maybe that's what docs are for?
     predict: opts => {
       graph.doBackprop = false
-      return predictSentence({ ...opts, forward: runForwardProp })
+      return predictSentence({
+        ...opts,
+        forward: predictForwardFunc,
+      })
     },
-    backward: () => {
-      graph.backward()
-    },
+    backward: graph.backward.bind(graph),
     layers: graph.layers,
   }
 
