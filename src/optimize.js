@@ -28,7 +28,6 @@ export default ({
 
       // gradient clip
       if (Math.abs(gradient) > clipVal) {
-        // this used to be mdwi = ... which would cancel out the grad clipping
         gradient = clipVal * Math.sign(gradient)
       }
 

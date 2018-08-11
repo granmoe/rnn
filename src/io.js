@@ -65,7 +65,6 @@ export function create({
       model,
       textModel,
     },
-    hiddenSizes, // why is this needed?
     // toJSON,
   }
 }
