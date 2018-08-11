@@ -28,17 +28,17 @@ export default ({ graph, outputSize, inputSize, hiddenSizes }) => charIndex => {
 //   const model = hiddenSizes.reduce((model, hiddenSize, index, hiddenSizes) => {
 //     const prevSize = index === 0 ? inputSize : hiddenSizes[index - 1]
 
-//     model['Wxh' + index] = createRandomMat(hiddenSize, prevSize, 0.08)
-//     model['Whh' + index] = createRandomMat(hiddenSize, hiddenSize, 0.08)
-//     model['bhh' + index] = createMat(hiddenSize, 1)
+//     model['Wxh' + index] = createRandomMat({ rows: hiddenSize, cols: prevSize }, 0.08)
+//     model['Whh' + index] = createRandomMat({ rows: hiddenSize, cols: hiddenSize }, 0.08)
+//     model['bhh' + index] = createMat({ rows: hiddenSize, cols: 1 })
 //   }, {})
 
 //   // decoder params
-//   model['Whd'] = createRandomMat(outputSize, hiddenSizes[hiddenSizes.length - 1], 0.08)
-//   model['bd'] = createMat(outputSize, 1)
+//   model['Whd'] = createRandomMat({ rows: outputSize, cols: hiddenSizes[hiddenSizes.length - 1] }, 0.08)
+//   model['bd'] = createMat({ rows: outputSize, cols: 1 })
 
 //   // letter embedding vectors
-//   model['Wil'] = createRandomMat(outputSize, inputSize, 0, 0.08)
+//   model['Wil'] = createRandomMat({ rows: outputSize, cols: inputSize }, 0, 0.08)
 
 //   return model
 // }

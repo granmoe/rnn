@@ -61,7 +61,7 @@ export function sampleIndex(weights) {
 }
 
 export function softmax(m) {
-  const out = createMat(m.rows, m.cols) // probability volume
+  const out = createMat({ rows: m.rows, cols: m.cols }) // probability volume
 
   const [firstW, ...remainingW] = m.weights
   let maxval = firstW

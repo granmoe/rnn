@@ -2,7 +2,7 @@ import createMat, { createRandomMat } from '../matrix'
 
 describe('createRandomMat', () => {
   test('produces a matrix of the size given in the args with random values within the bounds given by the third arg', () => {
-    const result = createRandomMat(20, 30, 0.5)
+    const result = createRandomMat({ rows: 20, cols: 30 }, 0.5)
 
     expect(result.rows).toBe(20)
     expect(result.cols).toBe(30)
@@ -13,7 +13,7 @@ describe('createRandomMat', () => {
   })
 
   test('produces a with random values between -0.08 and 0.08 when no bound is provided', () => {
-    const result = createRandomMat(40, 1)
+    const result = createRandomMat({ rows: 40, cols: 1 })
 
     result.weights.forEach(weight => {
       expect(weight < 0.08 && weight > -0.08).toBeTruthy()
@@ -23,7 +23,7 @@ describe('createRandomMat', () => {
 
 describe('clone', () => {
   test('returns a new matrix with the same weights as the input matrix, but zeroed gradients', () => {
-    const mat = createRandomMat(10, 10)
+    const mat = createRandomMat({ rows: 10, cols: 10 })
     const clonedMat = mat.clone()
 
     clonedMat.weights.forEach((weight, index) => {
@@ -37,7 +37,7 @@ describe('clone', () => {
 })
 
 describe('indexToCoord', () => {
-  const mat = createMat(10, 10)
+  const mat = createMat({ rows: 10, cols: 10 })
 
   test('returns an object { row, col } for a given matrix and index', () => {
     expect(mat.indexToCoord(0)).toEqual({ row: 0, col: 0 })
@@ -54,7 +54,7 @@ describe('indexToCoord', () => {
 
 describe('updateGradients', () => {
   test('uses passed in function to update gradient values of a matrix', () => {
-    const mat = createMat(2, 2)
+    const mat = createMat({ rows: 2, cols: 2 })
     const expectedGradients = [0, 1, 2, 3]
 
     mat.updateGradients((grad, i) => grad + i)
@@ -66,7 +66,7 @@ describe('updateGradients', () => {
 
 describe('updateWeights', () => {
   test('uses passed in function to update weights of a matrix', () => {
-    const mat = createMat(2, 2)
+    const mat = createMat({ rows: 2, cols: 2 })
     const expectedWeights = [0, 1, 2, 3]
 
     mat.updateWeights((weight, i) => weight + i)

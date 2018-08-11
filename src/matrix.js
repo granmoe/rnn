@@ -1,7 +1,7 @@
 import { assert, randFloat } from './utils'
 
 // FIXME: Change rows/cols to rowCount, colCount or numRows, numCols
-export default function createMat(rows, cols) {
+export default function createMat({ rows, cols }) {
   const length = rows * cols
 
   return {
@@ -13,7 +13,7 @@ export default function createMat(rows, cols) {
     gradients: new Float64Array(length),
     cachedGradients: new Float64Array(length),
     clone() {
-      const copy = createMat(this.rows, this.cols)
+      const copy = createMat({ rows: this.rows, cols: this.cols })
       copy.weights = new Float64Array(this.weights)
       return copy
     },
@@ -42,13 +42,13 @@ export default function createMat(rows, cols) {
 }
 
 // return Layer but filled with random numbers from gaussian
-export const createRandomMat = (rows, cols, std = 0.08) =>
-  createMat(rows, cols).updateWeights(_ => randFloat(-std, std)) // kind of :P
+export const createRandomMat = ({ rows, cols }, std = 0.08) =>
+  createMat({ rows, cols }).updateWeights(_ => randFloat(-std, std)) // kind of :P
 
 // TODO IO
 // serialize() {}
 // export const matFromJSON = ({ rows, cols, weights }) => {
-//   const mat = createMat(rows, cols)
+//   const mat = createMat({ rows, cols })
 //   mat.weights = new Float64Array(Object.values(weights))
 //   return mat
 // }

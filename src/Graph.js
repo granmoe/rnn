@@ -19,7 +19,7 @@ export default class Graph {
     if (this.layers[this.nextLayerIndex]) {
       mat = this.layers[this.nextLayerIndex]
     } else {
-      mat = type === 'rand' ? createRandomMat(rows, cols) : createMat(rows, cols)
+      mat = type === 'rand' ? createRandomMat({ rows, cols }) : createMat({ rows, cols })
       this.layers.push(mat)
     }
 
@@ -36,7 +36,7 @@ export default class Graph {
     const m = this.getMat(mOpts)
     // pluck a row of m with index index and return it as col vector
     const cols = m.cols
-    const out = createMat(cols, 1).updateWeights(
+    const out = createMat({ rows: cols, cols: 1 }).updateWeights(
       (_weight, i) => m.weights[cols * index + i],
     )
 
@@ -101,15 +101,17 @@ export default class Graph {
     assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
     // out = dot product of m1 and m2
-    const out = createMat(m1.rows, m2.cols).updateWeights((_weight, i, indexToCoord) => {
-      const { row, col } = indexToCoord(i)
-      let dot = 0
-      for (let n = 0; n < m1.cols; n++) {
-        dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
-      }
+    const out = createMat({ rows: m1.rows, cols: m2.cols }).updateWeights(
+      (_weight, i, indexToCoord) => {
+        const { row, col } = indexToCoord(i)
+        let dot = 0
+        for (let n = 0; n < m1.cols; n++) {
+          dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
+        }
 
-      return dot
-    })
+        return dot
+      },
+    )
 
     this.doBackprop &&
       this.backwardFunctions.unshift(() => {
