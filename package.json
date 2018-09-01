@@ -56,6 +56,8 @@
   },
   "homepage": "https://github.com/granmoe/rnn#readme",
   "dependencies": {
-    "babel-polyfill": "^6.26.0"
+    "babel-polyfill": "^6.26.0",
+    "gpu.js": "^1.6.0",
+    "napajs": "^0.2.3"
   }
 }

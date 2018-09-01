@@ -9,21 +9,21 @@ export default function createMat({ rows, cols }) {
     rows,
     cols,
     length: rows * cols,
-    weights: new Float64Array(length),
-    gradients: new Float64Array(length),
-    cachedGradients: new Float64Array(length),
+    weights: new Float32Array(length),
+    gradients: new Float32Array(length),
+    cachedGradients: new Float32Array(length),
     clone() {
       const copy = createMat({ rows: this.rows, cols: this.cols })
-      copy.weights = new Float64Array(this.weights)
+      copy.weights = new Float32Array(this.weights)
       return copy
     },
     resetGradients() {
-      this.gradients = new Float64Array(this.length)
+      this.gradients = new Float32Array(this.length)
     },
     indexToCoord(i) {
       assert(i < this.length, 'index greater than matrix length')
       return {
-        row: Math.ceil((i + 1) / this.cols) - 1,
+        row: Math.floor(i / this.cols),
         col: ((i + 1) % this.cols || this.cols) - 1,
       }
     },
@@ -49,6 +49,6 @@ export const createRandomMat = ({ rows, cols }, std = 0.08) =>
 // serialize() {}
 // export const matFromJSON = ({ rows, cols, weights }) => {
 //   const mat = createMat({ rows, cols })
-//   mat.weights = new Float64Array(Object.values(weights))
+//   mat.weights = new Float32Array(Object.values(weights))
 //   return mat
 // }

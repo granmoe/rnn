@@ -1,5 +1,8 @@
+import GPU from 'gpu.js'
 import { assert, updateMats } from './utils'
 import createMat, { createRandomMat } from './matrix'
+
+const gpu = new GPU()
 
 // Does matrix ops, keeps track of backprop and performs backprop
 export default function createGraph() {
@@ -95,18 +98,37 @@ export default function createGraph() {
       const m2 = this.getMat(m2opts)
       assert(m1.cols === m2.rows, 'matmul dimensions misaligned')
 
-      // out = dot product of m1 and m2
-      const out = createMat({ rows: m1.rows, cols: m2.cols }).updateWeights(
-        (_weight, i, indexToCoord) => {
-          const { row, col } = indexToCoord(i)
+      const out = createMat({ rows: m1.rows, cols: m2.cols })
+
+      const gpuMul = gpu.createKernel(
+        function(m1w, m1cols, m2w, m2cols, outCols) {
+          const row = Math.floor(this.thread.x / outCols)
+          const col = this.thread.x - row * this.thread.x
+
           let dot = 0
-          for (let n = 0; n < m1.cols; n++) {
-            dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
+          for (let n = 0; n < this.constants.size; n++) {
+            dot += m1w[n + row * m1cols] * m2w[n * m2cols + col]
           }
 
           return dot
         },
+        { output: [out.length], constants: { size: m1.cols } },
       )
+
+      out.weights = new Float32Array(
+        gpuMul(m1.weights, m1.cols, m2.weights, m2.cols, out.cols),
+      )
+
+      // out = dot product of m1 and m2
+      // out.updateWeights((_weight, i, indexToCoord) => {
+      //   const { row, col } = indexToCoord(i)
+      //   let dot = 0
+      //   for (let n = 0; n < m1.cols; n++) {
+      //     dot += m1.weights[n + row * m1.cols] * m2.weights[n * m2.cols + col]
+      //   }
+
+      //   return dot
+      // })
 
       this.doBackprop &&
         backwardFunctions.unshift(() => {
