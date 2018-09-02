@@ -1,6 +1,16 @@
 import optimize from './optimize'
 import { range } from './utils'
 
+let runningAverageMs = null
+
+const updateRunningAverageMs = newTime => {
+  if (runningAverageMs === null) {
+    runningAverageMs = Math.round(newTime)
+  } else {
+    runningAverageMs = Math.round((runningAverageMs + newTime) / 2)
+  }
+}
+
 // make a train function that closes around a given graph instance and its params
 const makeTrainFunc = ({
   regc,
@@ -21,6 +31,7 @@ const makeTrainFunc = ({
     for (const currentIteration of range(1, numIterations)) {
       totalIterations += 1
 
+      const startTime = Date.now()
       const { perplexity, cost } = forward()
       backward()
       optimize({
@@ -31,6 +42,8 @@ const makeTrainFunc = ({
         decayRate,
         smoothingEpsilon,
       })
+      updateRunningAverageMs(Date.now() - startTime)
+      console.log(runningAverageMs)
 
       if (currentIteration === numIterations) {
         let argMaxPrediction, samples

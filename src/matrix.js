@@ -22,9 +22,10 @@ export default function createMat({ rows, cols }) {
     },
     indexToCoord(i) {
       assert(i < this.length, 'index greater than matrix length')
+      const row = Math.floor(i / this.cols)
       return {
-        row: Math.ceil((i + 1) / this.cols) - 1,
-        col: ((i + 1) % this.cols || this.cols) - 1,
+        row,
+        col: i - row * this.cols,
       }
     },
     updateGradients(func) {
