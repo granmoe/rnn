@@ -43,9 +43,9 @@ const makeTrainFunc = ({
         smoothingEpsilon,
       })
       updateRunningAverageMs(Date.now() - startTime)
-      console.log(runningAverageMs)
 
       if (currentIteration === numIterations) {
+        console.log(runningAverageMs)
         let argMaxPrediction, samples
 
         if (sampleFrequency && totalIterations % sampleFrequency === 0) {
