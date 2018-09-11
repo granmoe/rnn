@@ -6,6 +6,12 @@
 
 # In Progress
 
+## Make it fast
+
+- Run a model on each CPU core then average all their weights every 1000 or so iters
+  - Need to get importable URL of file...somehow just serve static js files...even if it's a stupid way
+- If this doesn't work, just parallelize some of the internal graph ops like mul with hamsters.js or threads.js
+
 # Next
 
 - Better overall API for building generic recurrent DNNs (can't remember what I meant by this, but I think it was important)
