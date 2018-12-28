@@ -4,6 +4,29 @@
 - IO
 - RNN
 
+# Inbox
+
+delete napa branch?
+
+const IS_NODE = process.release.name === 'node'
+if node, do parallel stuff
+better yet, do parallel no matter what (see workerpool)
+https://github.com/josdejong/workerpool
+could also use jest worker thing instead
+
+PLAN
+
+create a new graph for each parallel op
+then merge all back into main graph
+
+nextLayerIndex += sum(all other graphs' next layer index)
+layers.concat(layers from all other graphs)
+if this.doBackprop (main graph)
+backwardfuncs.concat(from all other graphs)
+
+TRY THIS FIRST!!!!
+try just training a model on each processor and conct'ing them via average
+
 # In Progress
 
 ## Make it fast
@@ -14,6 +37,7 @@
 
 # Next
 
+- Use codename: bonsai to simplify mutual dependence between utils and matrix
 - Better overall API for building generic recurrent DNNs (can't remember what I meant by this, but I think it was important)
 - Maybe just have one train method on graph that runs computeCost, backward, and optimize
 - And one predict method
